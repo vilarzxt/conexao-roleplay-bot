@@ -10,7 +10,7 @@ import logging
 # 📦 METADATA DO BOT
 # =========================
 
-VERSION = "v1.2.8.1"
+VERSION = "v1.2.8.2"
 UPDATE_TYPE = "Correção"
 
 PROJECT_NAME = "Conexão Roleplay"
@@ -23,13 +23,13 @@ PROJECT_DESCRIPTION = (
 LAST_UPDATE = {
     "version": VERSION,
     "type": UPDATE_TYPE,
-    "description": "Correção de sincronização e expansão dos comandos base",
+    "description": "Correção do sistema de sincronização slash commands",
     "changes": [
-        "Reset automático dos comandos antigos",
-        "Correção de conflito de assinatura",
-        "Expansão dos comandos administrativos",
-        "Implementação inicial dos sistemas base",
-        "Padronização visual completa"
+        "Correção do setup_hook",
+        "Correção do sync de comandos",
+        "Remoção do reset incorreto de comandos",
+        "Estabilização da sincronização local",
+        "Correção do problema de comandos invisíveis"
     ]
 }
 
@@ -85,7 +85,6 @@ logging.basicConfig(
 # =========================
 
 intents = discord.Intents.default()
-
 intents.message_content = True
 
 bot = commands.Bot(
@@ -124,15 +123,21 @@ def setup_embed(embed: discord.Embed):
 @bot.event
 async def setup_hook():
 
-    bot.tree.clear_commands(guild=None)
+    guild = discord.Object(id=ID_SERVIDOR_TESTE)
 
-    bot.tree.clear_commands(guild=GUILD_TESTE)
+    try:
 
-    synced = await bot.tree.sync(guild=GUILD_TESTE)
+        synced = await bot.tree.sync(guild=guild)
 
-    logging.info(
-        f"{len(synced)} comandos slash sincronizados"
-    )
+        logging.info(
+            f"{len(synced)} comandos slash sincronizados"
+        )
+
+        for cmd in synced:
+            logging.info(f"/{cmd.name}")
+
+    except Exception as e:
+        logging.error(e)
 
 # =========================
 # ✅ READY
@@ -368,8 +373,6 @@ async def limpar(
         color=EMBED_COLOR
     )
 
-    embed.set_image(url=PAINEL_ADMIN)
-
     setup_embed(embed)
 
     await interaction.followup.send(
@@ -410,8 +413,6 @@ async def warn(
         inline=False
     )
 
-    embed.set_image(url=PAINEL_ADMIN)
-
     setup_embed(embed)
 
     await interaction.response.send_message(embed=embed)
@@ -450,8 +451,6 @@ async def kick(
         value=motivo,
         inline=False
     )
-
-    embed.set_image(url=PAINEL_ADMIN)
 
     setup_embed(embed)
 
@@ -492,8 +491,6 @@ async def ban(
         inline=False
     )
 
-    embed.set_image(url=PAINEL_ADMIN)
-
     setup_embed(embed)
 
     await interaction.response.send_message(embed=embed)
@@ -527,8 +524,6 @@ async def lock(interaction: discord.Interaction):
         color=EMBED_COLOR
     )
 
-    embed.set_image(url=PAINEL_ADMIN)
-
     setup_embed(embed)
 
     await interaction.response.send_message(embed=embed)
@@ -561,8 +556,6 @@ async def unlock(interaction: discord.Interaction):
         description=f"{interaction.channel.mention} desbloqueado.",
         color=EMBED_COLOR
     )
-
-    embed.set_image(url=PAINEL_ADMIN)
 
     setup_embed(embed)
 
@@ -599,7 +592,7 @@ async def anuncio(
 
     confirm = discord.Embed(
         title="📢 Anúncio Enviado",
-        description=f"Anúnio enviado para {canal.mention}",
+        description=f"Anúncio enviado para {canal.mention}",
         color=EMBED_COLOR
     )
 
