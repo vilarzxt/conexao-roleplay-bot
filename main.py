@@ -7,18 +7,18 @@ import psutil
 import logging
 
 # =========================
-# 📦 VERSIONAMENTO PADRÃO
+# 📦 VERSIONING SYSTEM
 # =========================
 
 BASE_VERSION = "1.2.8"
-PATCH_VERSION = 3
+PATCH_VERSION = 4
 
 VERSION = f"{BASE_VERSION}.{PATCH_VERSION}"
 
-if PATCH_VERSION == 0:
-    UPDATE_TYPE = "Atualização"
-else:
-    UPDATE_TYPE = f"Correção da {BASE_VERSION}"
+UPDATE_TYPE = (
+    "Atualização" if PATCH_VERSION == 0
+    else f"Correção da {BASE_VERSION}"
+)
 
 PROJECT_NAME = "Conexão Roleplay"
 
@@ -30,13 +30,13 @@ PROJECT_DESCRIPTION = (
 LAST_UPDATE = {
     "version": VERSION,
     "type": UPDATE_TYPE,
-    "description": "Refatoração completa do sistema de slash commands",
+    "description": "Correção definitiva do sync de slash commands e estabilização do CommandTree",
     "changes": [
+        "Removido clear_commands que causava perda de registro",
         "Correção do setup_hook",
-        "Correção do sync de comandos",
-        "Remoção de conflito de registry",
-        "Estabilização do CommandTree",
-        "Correção de comandos invisíveis"
+        "Estabilização do sync por guild",
+        "Correção de CommandNotFound",
+        "Ajuste de consistência no registry de comandos"
     ]
 }
 
@@ -96,18 +96,17 @@ def setup_embed(embed: discord.Embed):
     return embed
 
 # =========================
-# 🛡️ SYNC HARDENED
+# 🛡️ STABLE SYNC
 # =========================
 
 @bot.event
 async def setup_hook():
-    guild = discord.Object(id=GUILD_ID)
-
     try:
         await bot.wait_until_ready()
 
-        bot.tree.clear_commands(guild=guild)
+        guild = discord.Object(id=GUILD_ID)
 
+        # Sync seguro (SEM limpar comandos)
         synced = await bot.tree.sync(guild=guild)
 
         logging.info(f"{len(synced)} comandos sincronizados")
@@ -115,7 +114,7 @@ async def setup_hook():
         for cmd in synced:
             logging.info(f"/{cmd.name}")
 
-        logging.info("SYNC ESTÁVEL CONCLUÍDO")
+        logging.info("SYNC CONCLUÍDO COM SUCESSO")
 
     except Exception as e:
         logging.error(f"Erro no sync: {e}")
@@ -139,7 +138,7 @@ async def on_ready():
 # 🏓 /PING
 # =========================
 
-@bot.tree.command(name="ping", description="Latência do bot")
+@bot.tree.command(name="ping", description="Mostra latência do bot")
 async def ping(interaction: discord.Interaction):
     latency = round(bot.latency * 1000)
 
@@ -169,11 +168,7 @@ async def info(interaction: discord.Interaction):
     embed.add_field("Versão", VERSION, inline=True)
     embed.add_field("Tipo", UPDATE_TYPE, inline=True)
 
-    embed.add_field(
-        "Atualização",
-        LAST_UPDATE["description"],
-        inline=False
-    )
+    embed.add_field("Atualização", LAST_UPDATE["description"], inline=False)
 
     embed.add_field(
         "Mudanças",
@@ -293,7 +288,10 @@ async def lock(interaction: discord.Interaction):
     overwrite = interaction.channel.overwrites_for(interaction.guild.default_role)
     overwrite.send_messages = False
 
-    await interaction.channel.set_permissions(interaction.guild.default_role, overwrite=overwrite)
+    await interaction.channel.set_permissions(
+        interaction.guild.default_role,
+        overwrite=overwrite
+    )
 
     await interaction.response.send_message("🔒 Canal bloqueado")
 
@@ -308,7 +306,10 @@ async def unlock(interaction: discord.Interaction):
     overwrite = interaction.channel.overwrites_for(interaction.guild.default_role)
     overwrite.send_messages = True
 
-    await interaction.channel.set_permissions(interaction.guild.default_role, overwrite=overwrite)
+    await interaction.channel.set_permissions(
+        interaction.guild.default_role,
+        overwrite=overwrite
+    )
 
     await interaction.response.send_message("🔓 Canal desbloqueado")
 
@@ -316,7 +317,7 @@ async def unlock(interaction: discord.Interaction):
 # 📢 /ANUNCIO
 # =========================
 
-@bot.tree.command(name="anuncio", description="Fazer anúncio")
+@bot.tree.command(name="anuncio", description="Enviar anúncio")
 @app_commands.checks.has_permissions(manage_guild=True)
 async def anuncio(interaction: discord.Interaction, canal: discord.TextChannel, titulo: str, mensagem: str):
 
