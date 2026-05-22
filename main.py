@@ -1,97 +1,172 @@
-import os
 import discord
 from discord.ext import commands
+import os
+import time
+import psutil
+import logging
 
 # =========================
-# TOKEN
+# METADADOS DO PROJETO
 # =========================
+
+VERSION = "v1.2.2"
+PROJECT_NAME = "Conexão Roleplay Bot"
+
+# =========================
+# LOGGING (GITHUB READY)
+# =========================
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(message)s"
+)
+
+# =========================
+# INTENTS
+# =========================
+
+intents = discord.Intents.default()
+intents.message_content = True
+intents.members = True
+
+bot = commands.Bot(
+    command_prefix="!",
+    intents=intents,
+    help_command=None
+)
+
+# =========================
+# ON READY
+# =========================
+
+@bot.event
+async def on_ready():
+    logging.info(f"{PROJECT_NAME} online como {bot.user}")
+    logging.info(f"Versão: {VERSION}")
+    logging.info(f"Servidores: {len(bot.guilds)}")
+
+    await bot.change_presence(
+        activity=discord.Game(name=f"{PROJECT_NAME} | {VERSION}"),
+        status=discord.Status.online
+    )
+
+# =========================
+# PING
+# =========================
+
+@bot.command()
+async def ping(ctx):
+
+    start = time.perf_counter()
+    msg = await ctx.send("📡 Calculando latência...")
+    end = time.perf_counter()
+
+    bot_latency = round(bot.latency * 1000)
+    api_latency = round((end - start) * 1000)
+
+    status = (
+        "🟢 Excelente" if bot_latency < 100 else
+        "🟡 Estável" if bot_latency < 200 else
+        "🔴 Alta"
+    )
+
+    embed = discord.Embed(
+        title="🏓 Ping do Sistema",
+        color=discord.Color.blue(),
+        timestamp=discord.utils.utcnow()
+    )
+
+    embed.add_field(name="🤖 Bot", value=f"`{bot_latency}ms`", inline=True)
+    embed.add_field(name="📡 API", value=f"`{api_latency}ms`", inline=True)
+    embed.add_field(name="📊 Status", value=status, inline=True)
+
+    embed.set_footer(text=f"{PROJECT_NAME} • {VERSION}")
+
+    await msg.edit(content=None, embed=embed)
+
+# =========================
+# INFO
+# =========================
+
+@bot.command()
+async def info(ctx):
+
+    embed = discord.Embed(
+        title="📘 Informações do Bot",
+        description="Sistema oficial da Conexão Roleplay",
+        color=discord.Color.purple(),
+        timestamp=discord.utils.utcnow()
+    )
+
+    embed.add_field(name="🤖 Bot", value=str(bot.user), inline=True)
+    embed.add_field(name="🆔 ID", value=bot.user.id, inline=True)
+
+    embed.add_field(name="📦 Versão", value=VERSION, inline=True)
+
+    embed.add_field(
+        name="🆕 Atualização",
+        value="Padronização de sistema + compatibilidade GitHub/Railway",
+        inline=False
+    )
+
+    embed.add_field(
+        name="⚙️ Ambiente",
+        value="GitHub → Railway Deploy",
+        inline=False
+    )
+
+    embed.add_field(
+        name="🌐 Servidores",
+        value=str(len(bot.guilds)),
+        inline=True
+    )
+
+    embed.set_footer(text=f"{PROJECT_NAME} • System Info")
+
+    await ctx.send(embed=embed)
+
+# =========================
+# STATUS
+# =========================
+
+@bot.command()
+async def status(ctx):
+
+    cpu = psutil.cpu_percent(interval=1)
+    ram = psutil.virtual_memory().percent
+
+    embed = discord.Embed(
+        title="📊 Status do Sistema",
+        color=discord.Color.green(),
+        timestamp=discord.utils.utcnow()
+    )
+
+    embed.add_field(name="🧠 CPU", value=f"{cpu}%", inline=True)
+    embed.add_field(name="💾 RAM", value=f"{ram}%", inline=True)
+    embed.add_field(name="📡 Ping", value=f"{round(bot.latency * 1000)}ms", inline=True)
+
+    embed.add_field(
+        name="🧾 Estado geral",
+        value="🟢 Operacional",
+        inline=False
+    )
+
+    embed.set_footer(text=f"{PROJECT_NAME} • Monitoring")
+
+    await ctx.send(embed=embed)
+
+# =========================
+# TOKEN (GITHUB + RAILWAY)
+# =========================
+
 TOKEN = os.getenv("TOKEN")
 
 if not TOKEN:
-    raise RuntimeError("TOKEN não encontrado. Configure a variável de ambiente TOKEN.")
-
-# =========================
-# CONFIG
-# =========================
-BOT_COLOR = discord.Color.gold()
-
-GUILD_ID = 1465461083757351061
-GUILD = discord.Object(id=GUILD_ID)
-
-intents = discord.Intents.default()
-bot = commands.Bot(command_prefix="!", intents=intents)
-
-# =========================
-# SETUP HOOK (SYNC LIMPO)
-# =========================
-async def setup_hook():
-    # DEV MODE: sincroniza apenas no servidor
-    await bot.tree.sync(guild=GUILD)
-
-    # opcional: mantém global sem interferir
-    await bot.tree.sync()
-
-bot.setup_hook = setup_hook
-
-# =========================
-# READY
-# =========================
-@bot.event
-async def on_ready():
-    print(f"Bot online como: {bot.user}")
-
-# =========================
-# /PING
-# =========================
-@bot.tree.command(name="ping", description="Verifica latência do bot", guild=GUILD)
-async def ping(interaction: discord.Interaction):
-
-    embed = discord.Embed(
-        title="🏓 Ping",
-        description="Teste de conectividade do sistema.",
-        color=BOT_COLOR
-    )
-
-    embed.add_field(name="Status", value="Online", inline=True)
-    embed.add_field(name="Ping", value=f"{round(bot.latency * 1000)}ms", inline=True)
-
-    await interaction.response.send_message(embed=embed)
-
-# =========================
-# /STATUS
-# =========================
-@bot.tree.command(name="status", description="Status do sistema", guild=GUILD)
-async def status(interaction: discord.Interaction):
-
-    embed = discord.Embed(
-        title="📊 Status do Bot",
-        description="Sistema operacional",
-        color=BOT_COLOR
-    )
-
-    embed.add_field(name="Servidores", value=str(len(bot.guilds)), inline=True)
-    embed.add_field(name="Ping", value=f"{round(bot.latency * 1000)}ms", inline=True)
-
-    await interaction.response.send_message(embed=embed)
-
-# =========================
-# /INFO
-# =========================
-@bot.tree.command(name="info", description="Informações do bot", guild=GUILD)
-async def info(interaction: discord.Interaction):
-
-    embed = discord.Embed(
-        title="🤖 Conexão Roleplay",
-        description="Bot em desenvolvimento V1.2",
-        color=BOT_COLOR
-    )
-
-    embed.add_field(name="Versão", value="V1.2", inline=True)
-    embed.add_field(name="Modo", value="Guild Dev Mode", inline=True)
-
-    await interaction.response.send_message(embed=embed)
+    logging.critical("TOKEN não encontrado (variável de ambiente)")
+    raise SystemExit("TOKEN ausente")
 
 # =========================
 # RUN
 # =========================
+
 bot.run(TOKEN)
