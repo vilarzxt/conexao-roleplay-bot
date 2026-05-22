@@ -7,19 +7,15 @@ import psutil
 import logging
 
 # =========================
-# 📦 VERSIONAMENTO PADRÃO
+# 📦 VERSIONAMENTO
 # =========================
 
 BASE_VERSION = "1.2.8"
-PATCH_VERSION = 7
+PATCH_VERSION = 8
 
 VERSION = f"{BASE_VERSION}.{PATCH_VERSION}"
 
-UPDATE_TYPE = (
-    "Atualização"
-    if PATCH_VERSION == 0
-    else f"Correção da {BASE_VERSION}"
-)
+UPDATE_TYPE = "Correção de estabilidade do sync e deploy"
 
 PROJECT_NAME = "Conexão Roleplay"
 
@@ -28,27 +24,12 @@ PROJECT_DESCRIPTION = (
     "administração, monitoramento e integração de sistemas."
 )
 
-LAST_UPDATE = {
-    "version": VERSION,
-    "type": UPDATE_TYPE,
-    "description": "Estabilização completa do sistema de slash commands",
-    "changes": [
-        "Reforço do setup_hook de sync",
-        "Correção de cache de comandos no Discord",
-        "Melhoria de estabilidade do CommandTree",
-        "Ajustes de deploy em ambiente Railway/Host",
-        "Padronização de logs de boot"
-    ]
-}
-
 # =========================
 # 🎨 ASSETS
 # =========================
 
 LOGO = "https://i.postimg.cc/6pnGkC0h/file-0000000071f071f9a14ca207e3220fbd.png"
-
 EMBED_COLOR = 0x145A32
-FOOTER_TEXT = "Conexão Roleplay • Sistema Oficial"
 
 # =========================
 # ⏱ UPTIME
@@ -70,7 +51,7 @@ logging.basicConfig(
 )
 
 # =========================
-# BOT SETUP
+# BOT
 # =========================
 
 intents = discord.Intents.default()
@@ -85,42 +66,39 @@ bot = commands.Bot(
 GUILD_ID = 1465461083757351061
 
 # =========================
-# EMBED PADRÃO
+# EMBED BASE
 # =========================
 
 def embed_base(embed: discord.Embed):
     embed.set_thumbnail(url=LOGO)
-    embed.set_footer(text=FOOTER_TEXT, icon_url=LOGO)
+    embed.set_footer(text="Conexão Roleplay • Sistema Oficial", icon_url=LOGO)
     return embed
 
 # =========================
-# 🛡️ SYNC FORTE
+# 🛡️ SYNC ROBUSTO
 # =========================
 
 @bot.event
 async def setup_hook():
+    print(">>> [SYNC] INICIANDO <<<")
+
     try:
-        print(">>> [SYNC] INICIANDO <<<")
+        await bot.wait_until_ready()
 
         guild = discord.Object(id=GUILD_ID)
 
-        await bot.wait_until_ready()
+        # 🔁 SYNC GUILD (principal)
+        guild_synced = await bot.tree.sync(guild=guild)
+        print(f">>> [SYNC GUILD] {len(guild_synced)} comandos")
 
-        # limpa cache guild
-        bot.tree.clear_commands(guild=guild)
+        # 🌐 SYNC GLOBAL (fallback)
+        global_synced = await bot.tree.sync()
+        print(f">>> [SYNC GLOBAL] {len(global_synced)} comandos")
 
-        # sync guild (rápido e confiável)
-        synced = await bot.tree.sync(guild=guild)
-
-        print(f">>> [SYNC] {len(synced)} comandos sincronizados")
-
-        for cmd in synced:
-            print(f" - /{cmd.name}")
-
-        print(">>> [SYNC] FINALIZADO <<<")
+        print(">>> [SYNC FINALIZADO] <<<")
 
     except Exception as e:
-        logging.error(f"Erro no sync: {e}")
+        print(f">>> [SYNC ERROR] {e}")
 
 # =========================
 # READY
@@ -140,19 +118,22 @@ async def on_ready():
 # 13 COMANDOS SLASH
 # =========================
 
-# 1
 @bot.tree.command(name="ping", description="Latência do bot")
 async def ping(interaction: discord.Interaction):
     await interaction.response.send_message(f"🏓 {round(bot.latency*1000)}ms")
 
-# 2
+
 @bot.tree.command(name="info", description="Informações do sistema")
 async def info(interaction: discord.Interaction):
-    embed = discord.Embed(title="Info", description=PROJECT_DESCRIPTION, color=EMBED_COLOR)
+    embed = discord.Embed(
+        title="Info",
+        description=PROJECT_DESCRIPTION,
+        color=EMBED_COLOR
+    )
     embed_base(embed)
     await interaction.response.send_message(embed=embed)
 
-# 3
+
 @bot.tree.command(name="status", description="Status do sistema")
 async def status(interaction: discord.Interaction):
     embed = discord.Embed(title="Status", color=EMBED_COLOR)
@@ -162,39 +143,39 @@ async def status(interaction: discord.Interaction):
     embed_base(embed)
     await interaction.response.send_message(embed=embed)
 
-# 4
+
 @bot.tree.command(name="ticket", description="Sistema de tickets")
 async def ticket(interaction: discord.Interaction):
     await interaction.response.send_message("🎫 Sistema de tickets ativo")
 
-# 5
+
 @bot.tree.command(name="limpar", description="Limpa mensagens")
 @app_commands.checks.has_permissions(manage_messages=True)
 async def limpar(interaction: discord.Interaction, quantidade: int):
     await interaction.channel.purge(limit=quantidade)
-    await interaction.response.send_message("🧹 Limpo", ephemeral=True)
+    await interaction.response.send_message("🧹 Mensagens removidas", ephemeral=True)
 
-# 6
+
 @bot.tree.command(name="warn", description="Advertência")
 @app_commands.checks.has_permissions(kick_members=True)
 async def warn(interaction: discord.Interaction, usuario: discord.Member, motivo: str):
-    await interaction.response.send_message(f"⚠️ {usuario} advertido: {motivo}")
+    await interaction.response.send_message(f"⚠️ {usuario.mention} advertido: {motivo}")
 
-# 7
+
 @bot.tree.command(name="kick", description="Expulsar usuário")
 @app_commands.checks.has_permissions(kick_members=True)
 async def kick(interaction: discord.Interaction, usuario: discord.Member, motivo: str):
     await usuario.kick(reason=motivo)
-    await interaction.response.send_message("👢 Kick aplicado")
+    await interaction.response.send_message("👢 Usuário expulso")
 
-# 8
+
 @bot.tree.command(name="ban", description="Banir usuário")
 @app_commands.checks.has_permissions(ban_members=True)
 async def ban(interaction: discord.Interaction, usuario: discord.Member, motivo: str):
     await usuario.ban(reason=motivo)
-    await interaction.response.send_message("🔨 Ban aplicado")
+    await interaction.response.send_message("🔨 Usuário banido")
 
-# 9
+
 @bot.tree.command(name="lock", description="Trancar canal")
 @app_commands.checks.has_permissions(manage_channels=True)
 async def lock(interaction: discord.Interaction):
@@ -203,7 +184,7 @@ async def lock(interaction: discord.Interaction):
     await interaction.channel.set_permissions(interaction.guild.default_role, overwrite=overwrite)
     await interaction.response.send_message("🔒 Canal bloqueado")
 
-# 10
+
 @bot.tree.command(name="unlock", description="Destrancar canal")
 @app_commands.checks.has_permissions(manage_channels=True)
 async def unlock(interaction: discord.Interaction):
@@ -212,21 +193,21 @@ async def unlock(interaction: discord.Interaction):
     await interaction.channel.set_permissions(interaction.guild.default_role, overwrite=overwrite)
     await interaction.response.send_message("🔓 Canal liberado")
 
-# 11
+
 @bot.tree.command(name="anuncio", description="Fazer anúncio")
 @app_commands.checks.has_permissions(manage_guild=True)
 async def anuncio(interaction: discord.Interaction, canal: discord.TextChannel, titulo: str, mensagem: str):
     embed = discord.Embed(title=titulo, description=mensagem, color=EMBED_COLOR)
     embed_base(embed)
     await canal.send(embed=embed)
-    await interaction.response.send_message("📢 Enviado", ephemeral=True)
+    await interaction.response.send_message("📢 Anúncio enviado", ephemeral=True)
 
-# 12
+
 @bot.tree.command(name="regras", description="Regras do servidor")
 async def regras(interaction: discord.Interaction):
     await interaction.response.send_message("📜 Regras do servidor")
 
-# 13
+
 @bot.tree.command(name="servidor", description="Info servidor")
 async def servidor(interaction: discord.Interaction):
     g = interaction.guild
