@@ -6,104 +6,129 @@ import psutil
 import logging
 
 # =========================
-# METADATA DO BOT
+# METADATA
 # =========================
 
-VERSION = "v1.2.4"
-NOME_PROJETO = "Conexão Roleplay Bot"
+VERSION = "v1.2.5"
+NOME_PROJETO = "Conexão Alê Bot"
 
-# 🔥 SERVIDOR DE TESTE (GUILD SYNC)
-ID_SERVIDOR_TESTE = 1465461083757351061
+PROJETO_DESC = (
+    "Bot oficial do projeto Conexão Alê, responsável por automação, "
+    "informações do sistema e suporte no servidor."
+)
 
 ATUALIZACAO_INFO = {
-    "versao": VERSION,
-    "titulo": "Correção de duplicação + sync por servidor + suporte a prefixo",
+    "titulo": "Painel técnico + separação de comandos + melhoria de estrutura",
+    "tipo": "Correção + Atualização",
     "mudancas": [
-        "Correção de duplicação de comandos slash",
-        "Sincronização de comandos apenas no servidor de teste",
-        "Adição de comandos por prefixo (!)",
-        "Padronização de versão e estrutura do bot"
+        "Separação clara entre info, ping e status",
+        "Implementação de painel técnico completo",
+        "Melhoria na estrutura de embeds",
+        "Padronização de sistema do bot"
     ]
 }
+
+# =========================
+# UPTIME
+# =========================
+
+start_time = time.time()
+
+def uptime():
+    t = int(time.time() - start_time)
+    h = t // 3600
+    m = (t % 3600) // 60
+    s = t % 60
+    return f"{h}h {m}m {s}s"
 
 # =========================
 # LOGGING
 # =========================
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | %(levelname)s | %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s")
 
 # =========================
-# INTENTS
+# BOT SETUP
 # =========================
 
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
 
-bot = commands.Bot(
-    command_prefix="!",
-    intents=intents
-)
+bot = commands.Bot(command_prefix="!", intents=intents)
 
 # =========================
-# ON READY (SYNC GUILD)
+# READY
 # =========================
 
 @bot.event
 async def on_ready():
     logging.info(f"{NOME_PROJETO} online como {bot.user}")
     logging.info(f"Versão: {VERSION}")
-    logging.info(f"Servidores: {len(bot.guilds)}")
-
-    try:
-        guild = discord.Object(id=ID_SERVIDOR_TESTE)
-        synced = await bot.tree.sync(guild=guild)
-        logging.info(f"Slash Commands sincronizados: {len(synced)}")
-    except Exception as e:
-        logging.error(f"Erro ao sincronizar comandos: {e}")
 
     await bot.change_presence(
-        activity=discord.Game(name=f"{NOME_PROJETO} | {VERSION}")
+        activity=discord.Game(name=f"{NOME_PROJETO} | v{VERSION}")
     )
 
 # =========================
-# PREFIX COMMANDS (!)
+# 🏓 PING
 # =========================
 
 @bot.command()
 async def ping(ctx):
+
     start = time.perf_counter()
     msg = await ctx.send("📡 Calculando latência...")
     end = time.perf_counter()
 
+    bot_latency = round(bot.latency * 1000)
+    api_latency = round((end - start) * 1000)
+
+    status = (
+        "🟢 Online" if bot_latency < 100 else
+        "🟡 Estável" if bot_latency < 200 else
+        "🔴 Lento"
+    )
+
     embed = discord.Embed(
-        title="🏓 Ping (Prefixo)",
+        title="🏓 Ping do Bot",
         color=discord.Color.blue(),
         timestamp=discord.utils.utcnow()
     )
 
-    embed.add_field(name="Bot", value=f"{round(bot.latency * 1000)}ms", inline=True)
-    embed.add_field(name="API", value=f"{round((end - start) * 1000)}ms", inline=True)
+    embed.add_field(name="🤖 Latência do Bot", value=f"{bot_latency}ms", inline=True)
+    embed.add_field(name="📡 Latência da API", value=f"{api_latency}ms", inline=True)
+    embed.add_field(name="⚙️ Classificação", value=status, inline=True)
 
     await msg.edit(content=None, embed=embed)
+
+# =========================
+# 📘 INFO
+# =========================
 
 @bot.command()
 async def info(ctx):
 
     embed = discord.Embed(
         title="📘 Informações do Bot",
-        color=discord.Color.purple()
+        description=PROJETO_DESC,
+        color=discord.Color.purple(),
+        timestamp=discord.utils.utcnow()
     )
 
+    embed.add_field(name="Projeto", value="Conexão Alê", inline=True)
     embed.add_field(name="Versão", value=VERSION, inline=True)
 
     embed.add_field(
-        name="Atualização",
+        name="🆕 Última atualização",
         value=ATUALIZACAO_INFO["titulo"],
         inline=False
+    )
+
+    embed.add_field(
+        name="Tipo",
+        value=ATUALIZACAO_INFO["tipo"],
+        inline=True
     )
 
     embed.add_field(
@@ -113,78 +138,46 @@ async def info(ctx):
     )
 
     await ctx.send(embed=embed)
+
+# =========================
+# 📊 STATUS (PAINEL TÉCNICO)
+# =========================
 
 @bot.command()
 async def status(ctx):
 
-    cpu = psutil.cpu_percent()
+    cpu = psutil.cpu_percent(interval=1)
     ram = psutil.virtual_memory().percent
+    servidores = len(bot.guilds)
+    ping = round(bot.latency * 1000)
 
-    embed = discord.Embed(
-        title="📊 Status do Sistema",
-        color=discord.Color.green()
+    estado = (
+        "🟢 Online" if ping < 150 else
+        "🟡 Instável" if ping < 250 else
+        "🔴 Crítico"
     )
 
-    embed.add_field(name="CPU", value=f"{cpu}%", inline=True)
-    embed.add_field(name="RAM", value=f"{ram}%", inline=True)
+    embed = discord.Embed(
+        title="📊 Painel Técnico",
+        color=discord.Color.green(),
+        timestamp=discord.utils.utcnow()
+    )
+
+    embed.add_field(name="🧠 CPU", value=f"{cpu}%", inline=True)
+    embed.add_field(name="💾 RAM", value=f"{ram}%", inline=True)
+    embed.add_field(name="🌐 Servidores", value=str(servidores), inline=True)
+
+    embed.add_field(name="📡 Ping", value=f"{ping}ms", inline=True)
+    embed.add_field(name="⚙️ Estado", value=estado, inline=True)
+    embed.add_field(name="⏱ Uptime", value=uptime(), inline=True)
+
+    embed.add_field(
+        name="🧾 Sistema",
+        value="Monitoramento ativo e contínuo",
+        inline=False
+    )
 
     await ctx.send(embed=embed)
-
-# =========================
-# SLASH COMMANDS (/)
-# =========================
-
-@bot.tree.command(name="ping", description="Mostra o ping do bot")
-async def slash_ping(interaction: discord.Interaction):
-
-    embed = discord.Embed(
-        title="🏓 Ping (Slash)",
-        color=discord.Color.blue()
-    )
-
-    embed.add_field(name="Latência", value=f"{round(bot.latency * 1000)}ms")
-
-    await interaction.response.send_message(embed=embed)
-
-@bot.tree.command(name="info", description="Informações do bot")
-async def slash_info(interaction: discord.Interaction):
-
-    embed = discord.Embed(
-        title="📘 Informações do Bot",
-        color=discord.Color.purple()
-    )
-
-    embed.add_field(name="Versão", value=VERSION, inline=True)
-
-    embed.add_field(
-        name="Atualização",
-        value=ATUALIZACAO_INFO["titulo"],
-        inline=False
-    )
-
-    embed.add_field(
-        name="Mudanças",
-        value="\n".join(f"• {m}" for m in ATUALIZACAO_INFO["mudancas"]),
-        inline=False
-    )
-
-    await interaction.response.send_message(embed=embed)
-
-@bot.tree.command(name="status", description="Status do sistema")
-async def slash_status(interaction: discord.Interaction):
-
-    cpu = psutil.cpu_percent()
-    ram = psutil.virtual_memory().percent
-
-    embed = discord.Embed(
-        title="📊 Status do Sistema",
-        color=discord.Color.green()
-    )
-
-    embed.add_field(name="CPU", value=f"{cpu}%")
-    embed.add_field(name="RAM", value=f"{ram}%")
-
-    await interaction.response.send_message(embed=embed)
 
 # =========================
 # TOKEN (RAILWAY)
