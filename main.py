@@ -6,14 +6,14 @@ import psutil
 import logging
 
 # =========================
-# METADADOS DO PROJETO
+# METADADOS
 # =========================
 
-VERSION = "v1.2.2"
+VERSION = "v1.2.3"
 PROJECT_NAME = "Conexão Roleplay Bot"
 
 # =========================
-# LOGGING (GITHUB READY)
+# LOGGING
 # =========================
 
 logging.basicConfig(
@@ -31,12 +31,11 @@ intents.members = True
 
 bot = commands.Bot(
     command_prefix="!",
-    intents=intents,
-    help_command=None
+    intents=intents
 )
 
 # =========================
-# ON READY
+# ON READY + SYNC SLASH
 # =========================
 
 @bot.event
@@ -45,20 +44,26 @@ async def on_ready():
     logging.info(f"Versão: {VERSION}")
     logging.info(f"Servidores: {len(bot.guilds)}")
 
+    try:
+        synced = await bot.tree.sync()
+        logging.info(f"Slash Commands sincronizados: {len(synced)}")
+    except Exception as e:
+        logging.error(f"Erro ao sincronizar comandos: {e}")
+
     await bot.change_presence(
         activity=discord.Game(name=f"{PROJECT_NAME} | {VERSION}"),
         status=discord.Status.online
     )
 
 # =========================
-# PING
+# SLASH COMMAND: PING
 # =========================
 
-@bot.command()
-async def ping(ctx):
+@bot.tree.command(name="ping", description="Mostra a latência do bot")
+async def ping(interaction: discord.Interaction):
 
     start = time.perf_counter()
-    msg = await ctx.send("📡 Calculando latência...")
+    await interaction.response.send_message("📡 Calculando latência...")
     end = time.perf_counter()
 
     bot_latency = round(bot.latency * 1000)
@@ -82,14 +87,14 @@ async def ping(ctx):
 
     embed.set_footer(text=f"{PROJECT_NAME} • {VERSION}")
 
-    await msg.edit(content=None, embed=embed)
+    await interaction.edit_original_response(content=None, embed=embed)
 
 # =========================
-# INFO
+# SLASH COMMAND: INFO
 # =========================
 
-@bot.command()
-async def info(ctx):
+@bot.tree.command(name="info", description="Informações do bot")
+async def info(interaction: discord.Interaction):
 
     embed = discord.Embed(
         title="📘 Informações do Bot",
@@ -98,14 +103,13 @@ async def info(ctx):
         timestamp=discord.utils.utcnow()
     )
 
-    embed.add_field(name="🤖 Bot", value=str(bot.user), inline=True)
-    embed.add_field(name="🆔 ID", value=bot.user.id, inline=True)
-
+    embed.add_field(name="🤖 Bot", value=str(interaction.client.user), inline=True)
     embed.add_field(name="📦 Versão", value=VERSION, inline=True)
+    embed.add_field(name="🌐 Servidores", value=str(len(interaction.client.guilds)), inline=True)
 
     embed.add_field(
         name="🆕 Atualização",
-        value="Padronização de sistema + compatibilidade GitHub/Railway",
+        value="Migração completa para Slash Commands (v1.2.3)",
         inline=False
     )
 
@@ -115,22 +119,16 @@ async def info(ctx):
         inline=False
     )
 
-    embed.add_field(
-        name="🌐 Servidores",
-        value=str(len(bot.guilds)),
-        inline=True
-    )
-
     embed.set_footer(text=f"{PROJECT_NAME} • System Info")
 
-    await ctx.send(embed=embed)
+    await interaction.response.send_message(embed=embed)
 
 # =========================
-# STATUS
+# SLASH COMMAND: STATUS
 # =========================
 
-@bot.command()
-async def status(ctx):
+@bot.tree.command(name="status", description="Status do sistema do bot")
+async def status(interaction: discord.Interaction):
 
     cpu = psutil.cpu_percent(interval=1)
     ram = psutil.virtual_memory().percent
@@ -153,10 +151,10 @@ async def status(ctx):
 
     embed.set_footer(text=f"{PROJECT_NAME} • Monitoring")
 
-    await ctx.send(embed=embed)
+    await interaction.response.send_message(embed=embed)
 
 # =========================
-# TOKEN (GITHUB + RAILWAY)
+# TOKEN (RAILWAY)
 # =========================
 
 TOKEN = os.getenv("TOKEN")
