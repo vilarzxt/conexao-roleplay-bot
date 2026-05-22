@@ -6,187 +6,186 @@ import psutil
 import logging
 
 # =========================
-# METADATA
+# 📦 METADATA DO BOT
 # =========================
 
-VERSION = "v1.2.5"
-NOME_PROJETO = "Conexão Alê Bot"
+VERSION = "v1.2.6"
+PROJECT_NAME = "Conexão Alê Bot"
 
-PROJETO_DESC = (
+PROJECT_DESCRIPTION = (
     "Bot oficial do projeto Conexão Alê, responsável por automação, "
-    "informações do sistema e suporte no servidor."
+    "monitoramento e informações técnicas do servidor."
 )
 
-ATUALIZACAO_INFO = {
-    "titulo": "Painel técnico + separação de comandos + melhoria de estrutura",
-    "tipo": "Correção + Atualização",
-    "mudancas": [
-        "Separação clara entre info, ping e status",
-        "Implementação de painel técnico completo",
-        "Melhoria na estrutura de embeds",
-        "Padronização de sistema do bot"
+LAST_UPDATE = {
+    "version": VERSION,
+    "type": "Correção + Atualização estrutural",
+    "description": "Restauração da arquitetura completa (metadata + telemetry + slash system)",
+    "changes": [
+        "Reimplementação do metadata system",
+        "Padronização total em slash commands",
+        "Restauração do uptime system",
+        "Melhoria no painel de status",
+        "Correção de sync de comandos no Railway"
     ]
 }
 
 # =========================
-# UPTIME
+# ⏱ UPTIME TRACKER
 # =========================
 
 start_time = time.time()
 
-def uptime():
-    t = int(time.time() - start_time)
-    h = t // 3600
-    m = (t % 3600) // 60
-    s = t % 60
+def get_uptime():
+    elapsed = int(time.time() - start_time)
+    h = elapsed // 3600
+    m = (elapsed % 3600) // 60
+    s = elapsed % 60
     return f"{h}h {m}m {s}s"
 
 # =========================
-# LOGGING
+# 📜 LOGGING SYSTEM
 # =========================
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s")
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(message)s"
+)
 
 # =========================
-# BOT SETUP
+# 🤖 BOT SETUP
 # =========================
 
 intents = discord.Intents.default()
-intents.message_content = True
-intents.members = True
-
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 # =========================
-# READY
+# ⚙️ BOOT SYSTEM (CRÍTICO)
 # =========================
+
+ID_SERVIDOR_TESTE = 1465461083757351061
+
+@bot.event
+async def setup_hook():
+    guild = discord.Object(id=ID_SERVIDOR_TESTE)
+
+    bot.tree.clear_commands(guild=guild)
+    await bot.tree.sync(guild=guild)
+
+    logging.info("Slash commands sincronizados (guild mode)")
 
 @bot.event
 async def on_ready():
-    logging.info(f"{NOME_PROJETO} online como {bot.user}")
+    logging.info(f"{PROJECT_NAME} online como {bot.user}")
     logging.info(f"Versão: {VERSION}")
+    logging.info(f"Servidores conectados: {len(bot.guilds)}")
 
     await bot.change_presence(
-        activity=discord.Game(name=f"{NOME_PROJETO} | v{VERSION}")
+        activity=discord.Game(name=f"{PROJECT_NAME} | v{VERSION}")
     )
 
 # =========================
-# 🏓 PING
+# 🏓 /PING
 # =========================
 
-@bot.command()
-async def ping(ctx):
-
-    start = time.perf_counter()
-    msg = await ctx.send("📡 Calculando latência...")
-    end = time.perf_counter()
+@bot.tree.command(name="ping", description="Mostra latência do bot")
+async def ping(interaction: discord.Interaction):
 
     bot_latency = round(bot.latency * 1000)
-    api_latency = round((end - start) * 1000)
 
     status = (
-        "🟢 Online" if bot_latency < 100 else
-        "🟡 Estável" if bot_latency < 200 else
-        "🔴 Lento"
+        "🟢 Online" if bot_latency < 120 else
+        "🟡 Estável" if bot_latency < 250 else
+        "🔴 Crítico"
     )
 
     embed = discord.Embed(
-        title="🏓 Ping do Bot",
-        color=discord.Color.blue(),
-        timestamp=discord.utils.utcnow()
+        title="🏓 Ping System",
+        color=discord.Color.blue()
     )
 
-    embed.add_field(name="🤖 Latência do Bot", value=f"{bot_latency}ms", inline=True)
-    embed.add_field(name="📡 Latência da API", value=f"{api_latency}ms", inline=True)
-    embed.add_field(name="⚙️ Classificação", value=status, inline=True)
+    embed.add_field(name="Bot Latency", value=f"{bot_latency}ms", inline=True)
+    embed.add_field(name="Status", value=status, inline=True)
 
-    await msg.edit(content=None, embed=embed)
+    await interaction.response.send_message(embed=embed)
 
 # =========================
-# 📘 INFO
+# 📘 /INFO (METADATA COMPLETO)
 # =========================
 
-@bot.command()
-async def info(ctx):
+@bot.tree.command(name="info", description="Informações do bot e sistema")
+async def info(interaction: discord.Interaction):
 
     embed = discord.Embed(
-        title="📘 Informações do Bot",
-        description=PROJETO_DESC,
-        color=discord.Color.purple(),
-        timestamp=discord.utils.utcnow()
+        title="📘 Bot Information System",
+        description=PROJECT_DESCRIPTION,
+        color=discord.Color.purple()
     )
 
-    embed.add_field(name="Projeto", value="Conexão Alê", inline=True)
-    embed.add_field(name="Versão", value=VERSION, inline=True)
+    embed.add_field(name="Project", value=PROJECT_NAME, inline=True)
+    embed.add_field(name="Version", value=VERSION, inline=True)
 
     embed.add_field(
-        name="🆕 Última atualização",
-        value=ATUALIZACAO_INFO["titulo"],
+        name="Last Update",
+        value=LAST_UPDATE["description"],
         inline=False
     )
 
     embed.add_field(
-        name="Tipo",
-        value=ATUALIZACAO_INFO["tipo"],
+        name="Type",
+        value=LAST_UPDATE["type"],
         inline=True
     )
 
     embed.add_field(
-        name="Mudanças",
-        value="\n".join(f"• {m}" for m in ATUALIZACAO_INFO["mudancas"]),
+        name="Changes",
+        value="\n".join(f"• {c}" for c in LAST_UPDATE["changes"]),
         inline=False
     )
 
-    await ctx.send(embed=embed)
+    await interaction.response.send_message(embed=embed)
 
 # =========================
-# 📊 STATUS (PAINEL TÉCNICO)
+# 📊 /STATUS (PAINEL TÉCNICO COMPLETO)
 # =========================
 
-@bot.command()
-async def status(ctx):
+@bot.tree.command(name="status", description="Painel técnico do sistema")
+async def status(interaction: discord.Interaction):
 
     cpu = psutil.cpu_percent(interval=1)
     ram = psutil.virtual_memory().percent
-    servidores = len(bot.guilds)
+    servers = len(bot.guilds)
     ping = round(bot.latency * 1000)
+    uptime = get_uptime()
 
-    estado = (
-        "🟢 Online" if ping < 150 else
+    state = (
+        "🟢 Operacional" if ping < 150 else
         "🟡 Instável" if ping < 250 else
         "🔴 Crítico"
     )
 
     embed = discord.Embed(
-        title="📊 Painel Técnico",
-        color=discord.Color.green(),
-        timestamp=discord.utils.utcnow()
+        title="📊 System Control Panel",
+        color=discord.Color.green()
     )
 
-    embed.add_field(name="🧠 CPU", value=f"{cpu}%", inline=True)
-    embed.add_field(name="💾 RAM", value=f"{ram}%", inline=True)
-    embed.add_field(name="🌐 Servidores", value=str(servidores), inline=True)
+    embed.add_field(name="CPU", value=f"{cpu}%", inline=True)
+    embed.add_field(name="RAM", value=f"{ram}%", inline=True)
+    embed.add_field(name="Servers", value=str(servers), inline=True)
 
-    embed.add_field(name="📡 Ping", value=f"{ping}ms", inline=True)
-    embed.add_field(name="⚙️ Estado", value=estado, inline=True)
-    embed.add_field(name="⏱ Uptime", value=uptime(), inline=True)
+    embed.add_field(name="Ping", value=f"{ping}ms", inline=True)
+    embed.add_field(name="State", value=state, inline=True)
+    embed.add_field(name="Uptime", value=uptime, inline=True)
 
-    embed.add_field(
-        name="🧾 Sistema",
-        value="Monitoramento ativo e contínuo",
-        inline=False
-    )
-
-    await ctx.send(embed=embed)
+    await interaction.response.send_message(embed=embed)
 
 # =========================
-# TOKEN (RAILWAY)
+# 🔐 TOKEN RAILWAY
 # =========================
 
 TOKEN = os.getenv("TOKEN")
 
 if not TOKEN:
-    logging.critical("TOKEN não encontrado")
-    raise SystemExit()
+    raise SystemExit("TOKEN não encontrado")
 
 bot.run(TOKEN)
