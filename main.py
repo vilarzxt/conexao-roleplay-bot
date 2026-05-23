@@ -4,46 +4,32 @@ from discord import app_commands
 import os
 import time
 import psutil
-import logging
 
 # =========================
-# 📦 VERSIONAMENTO
+# 📦 VERSIONAMENTO OFICIAL
 # =========================
 
-VERSION = "1.2.9.9 - debug sync"
+VERSION_NAME = "V1.3.0"
+VERSION_DESCRIPTION = "Atualização para sistema RP estruturado"
+VERSION_FULL = f"{VERSION_NAME} | {VERSION_DESCRIPTION}"
 
 PROJECT_NAME = "Conexão Roleplay"
 
-PROJECT_DESCRIPTION = (
-    "Bot oficial do projeto Conexão Roleplay, responsável por automação, "
-    "administração, monitoramento e integração de sistemas."
-)
+GUILD_ID = 1465461083757351061
+GUILD = discord.Object(id=GUILD_ID)
 
 # =========================
-# 🎨 ASSETS
+# 🖼️ ASSETS OFICIAIS
 # =========================
 
-LOGO = "https://i.postimg.cc/6pnGkC0h/file-0000000071f071f9a14ca207e3220fbd.png"
-EMBED_COLOR = 0x145A32
-
-# =========================
-# ⏱ UPTIME
-# =========================
-
-start_time = time.time()
-
-def uptime():
-    t = int(time.time() - start_time)
-    return f"{t//3600}h {(t%3600)//60}m {t%60}s"
-
-# =========================
-# LOGGING
-# =========================
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | %(levelname)s | %(message)s"
-)
+ASSETS = {
+    "banner_institucional": "https://i.postimg.cc/ZRKBv2hx/1000038222-1.png",
+    "banner_global": "https://i.postimg.cc/nhScwr8R/IMG-20260517-WA0030.jpg",
+    "logo": "https://i.postimg.cc/6pnGkC0h/file-0000000071f071f9a14ca207e3220fbd.png",
+    "banner_ticket": "https://i.postimg.cc/GhBDjWTV/WA-1779121191958-1.jpg",
+    "banner_admin": "https://i.postimg.cc/G2qDMrQm/file-0000000028e871f585091163dcdcd281.png",
+    "logo_historica": "https://i.postimg.cc/rFb1XVLW/file-000000006aa861f893b69b785193ffb7-1-1.png"
+}
 
 # =========================
 # BOT
@@ -57,72 +43,203 @@ bot = commands.Bot(
     help_command=None
 )
 
-GUILD_ID = 1465461083757351061
+# =========================
+# UPTIME
+# =========================
+
+start_time = time.time()
+
+def uptime():
+    t = int(time.time() - start_time)
+    return f"{t//3600}h {(t%3600)//60}m {t%60}s"
 
 # =========================
 # EMBED BASE
 # =========================
 
-def embed_base(embed: discord.Embed):
-    embed.set_thumbnail(url=LOGO)
-    embed.set_footer(text="Conexão Roleplay • Sistema Oficial", icon_url=LOGO)
-    return embed
+def embed_base(title, desc=None):
+    e = discord.Embed(title=title, description=desc, color=0x145A32)
+    e.set_thumbnail(url=ASSETS["logo"])
+    return e
 
 # =========================
-# 🧠 COMANDOS SLASH
+# 📊 1. PING
 # =========================
 
-@bot.tree.command(name="ping", description="Latência do bot")
+@bot.tree.command(name="ping", guild=GUILD)
 async def ping(interaction: discord.Interaction):
-    await interaction.response.send_message(f"🏓 {round(bot.latency*1000)}ms")
-
-
-@bot.tree.command(name="info", description="Informações do sistema")
-async def info(interaction: discord.Interaction):
-    embed = discord.Embed(
-        title="Info",
-        description=PROJECT_DESCRIPTION,
-        color=EMBED_COLOR
-    )
-    embed_base(embed)
-    await interaction.response.send_message(embed=embed)
-
-
-@bot.tree.command(name="status", description="Status do sistema")
-async def status(interaction: discord.Interaction):
-    embed = discord.Embed(title="Status", color=EMBED_COLOR)
-    embed.add_field(name="CPU", value=f"{psutil.cpu_percent(interval=0.5)}%")
-    embed.add_field(name="RAM", value=f"{psutil.virtual_memory().percent}%")
-    embed.add_field(name="Uptime", value=uptime())
-    embed_base(embed)
-    await interaction.response.send_message(embed=embed)
-
+    e = embed_base("🏓 Latência do Sistema RP")
+    e.add_field(name="Ping", value=f"{round(bot.latency * 1000)}ms", inline=False)
+    e.set_image(url=ASSETS["banner_global"])
+    await interaction.response.send_message(embed=e)
 
 # =========================
-# 🚀 READY + SYNC CORRETO
+# 📦 2. INFO
+# =========================
+
+@bot.tree.command(name="info", guild=GUILD)
+async def info(interaction: discord.Interaction):
+    e = embed_base("📦 Sistema Conexão Roleplay")
+    e.add_field(name="Versão", value=VERSION_FULL, inline=False)
+    e.add_field(name="Projeto", value=PROJECT_NAME, inline=False)
+    e.set_image(url=ASSETS["banner_institucional"])
+    await interaction.response.send_message(embed=e)
+
+# =========================
+# 🖥 3. STATUS
+# =========================
+
+@bot.tree.command(name="status", guild=GUILD)
+async def status(interaction: discord.Interaction):
+    e = embed_base("🖥 Monitoramento do Sistema")
+    e.add_field(name="CPU", value=f"{psutil.cpu_percent()}%")
+    e.add_field(name="RAM", value=f"{psutil.virtual_memory().percent}%")
+    e.add_field(name="Uptime", value=uptime())
+    e.set_image(url=ASSETS["banner_admin"])
+    await interaction.response.send_message(embed=e)
+
+# =========================
+# 🎫 4. TICKET
+# =========================
+
+@bot.tree.command(name="ticket", guild=GUILD)
+async def ticket(interaction: discord.Interaction):
+    e = embed_base("🎫 Central de Suporte RP")
+    e.add_field(name="Status", value="Sistema ativo")
+    e.add_field(name="Ação", value="Abra um ticket para suporte")
+    e.set_image(url=ASSETS["banner_ticket"])
+    await interaction.response.send_message(embed=e)
+
+# =========================
+# ⚠️ 5. WARN
+# =========================
+
+@bot.tree.command(name="warn", guild=GUILD)
+@app_commands.checks.has_permissions(kick_members=True)
+async def warn(interaction: discord.Interaction, usuario: discord.Member, motivo: str):
+    e = embed_base("⚠️ Advertência Registrada")
+    e.add_field(name="Usuário", value=usuario.mention)
+    e.add_field(name="Motivo", value=motivo)
+    e.add_field(name="Moderador", value=interaction.user.mention)
+    await interaction.response.send_message(embed=e)
+
+# =========================
+# 👢 6. KICK
+# =========================
+
+@bot.tree.command(name="kick", guild=GUILD)
+@app_commands.checks.has_permissions(kick_members=True)
+async def kick(interaction: discord.Interaction, usuario: discord.Member, motivo: str):
+    await usuario.kick(reason=motivo)
+    e = embed_base("👢 Expulsão Registrada")
+    e.add_field(name="Usuário", value=usuario.mention)
+    e.add_field(name="Motivo", value=motivo)
+    await interaction.response.send_message(embed=e)
+
+# =========================
+# 🔨 7. BAN
+# =========================
+
+@bot.tree.command(name="ban", guild=GUILD)
+@app_commands.checks.has_permissions(ban_members=True)
+async def ban(interaction: discord.Interaction, usuario: discord.Member, motivo: str):
+    await usuario.ban(reason=motivo)
+    e = embed_base("🔨 Banimento Executado")
+    e.add_field(name="Usuário", value=usuario.mention)
+    e.add_field(name="Motivo", value=motivo)
+    await interaction.response.send_message(embed=e)
+
+# =========================
+# 🔒 8. LOCK
+# =========================
+
+@bot.tree.command(name="lock", guild=GUILD)
+@app_commands.checks.has_permissions(manage_channels=True)
+async def lock(interaction: discord.Interaction):
+    overwrite = interaction.channel.overwrites_for(interaction.guild.default_role)
+    overwrite.send_messages = False
+    await interaction.channel.set_permissions(interaction.guild.default_role, overwrite=overwrite)
+    await interaction.response.send_message("🔒 Canal bloqueado")
+
+# =========================
+# 🔓 9. UNLOCK
+# =========================
+
+@bot.tree.command(name="unlock", guild=GUILD)
+@app_commands.checks.has_permissions(manage_channels=True)
+async def unlock(interaction: discord.Interaction):
+    overwrite = interaction.channel.overwrites_for(interaction.guild.default_role)
+    overwrite.send_messages = True
+    await interaction.channel.set_permissions(interaction.guild.default_role, overwrite=overwrite)
+    await interaction.response.send_message("🔓 Canal desbloqueado")
+
+# =========================
+# 📢 10. ANÚNCIO
+# =========================
+
+@bot.tree.command(name="anuncio", guild=GUILD)
+@app_commands.checks.has_permissions(manage_guild=True)
+async def anuncio(interaction: discord.Interaction, titulo: str, mensagem: str):
+    e = embed_base(titulo, mensagem)
+    e.set_image(url=ASSETS["banner_global"])
+    await interaction.response.send_message(embed=e)
+
+# =========================
+# 🧾 11. EMBED
+# =========================
+
+@bot.tree.command(name="embed", guild=GUILD)
+async def embed(interaction: discord.Interaction, titulo: str, mensagem: str):
+    e = embed_base(titulo, mensagem)
+    await interaction.response.send_message(embed=e)
+
+# =========================
+# 📜 12. REGRAS
+# =========================
+
+@bot.tree.command(name="regras", guild=GUILD)
+async def regras(interaction: discord.Interaction):
+    e = embed_base("📜 Regras Oficiais RP")
+    e.set_image(url=ASSETS["banner_institucional"])
+    await interaction.response.send_message(embed=e)
+
+# =========================
+# 🌐 13. SERVIDOR
+# =========================
+
+@bot.tree.command(name="servidor", guild=GUILD)
+async def servidor(interaction: discord.Interaction):
+    g = interaction.guild
+    e = embed_base("🌐 Informações do Servidor")
+    e.add_field(name="Nome", value=g.name)
+    e.add_field(name="Membros", value=g.member_count)
+    e.set_image(url=ASSETS["banner_global"])
+    await interaction.response.send_message(embed=e)
+
+# =========================
+# 🔁 SYNC HÍBRIDO
 # =========================
 
 @bot.event
 async def on_ready():
     print("===================================")
     print("LOGADO:", bot.user)
-    print("VERSION:", VERSION)
-    print("REGISTRANDO COMANDOS...")
-
-    guild = discord.Object(id=GUILD_ID)
+    print("VERSÃO:", VERSION_FULL)
+    print("SESSÃO: RP SYSTEM ESTRUTURADO")
 
     try:
-        synced = await bot.tree.sync(guild=guild)
+        guild_sync = await bot.tree.sync(guild=GUILD)
+        global_sync = await bot.tree.sync()
 
-        print("SYNC RESULT:", len(synced))
-        print("COMANDOS INTERNOS:", [cmd.name for cmd in bot.tree.get_commands()])
+        print("GUILD SYNC:", len(guild_sync))
+        print("GLOBAL SYNC:", len(global_sync))
+        print("COMANDOS:", [c.name for c in bot.tree.get_commands()])
 
     except Exception as e:
-        print("ERRO NO SYNC:", e)
+        print("SYNC ERROR:", e)
 
-    print("BOT PRONTO E OPERACIONAL")
+    print("BOT PRONTO")
     print("===================================")
-
 
 # =========================
 # TOKEN
