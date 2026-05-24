@@ -15,3 +15,8 @@ ASSETS = {
 
     "logo_historica": "https://i.postimg.cc/rFb1XVLW/file-000000006aa861f893b69b785193ffb7-1-1.png"
 }
+# =========================
+# 🎨 EMBED COLORS
+# =========================
+
+EMBED_COLOR = 0x145A32
