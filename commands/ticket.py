@@ -1,74 +1,59 @@
 import discord
+
+from discord.ext import commands
 from discord import app_commands
 
-from config.settings import PROJECT_NAME
-from config.assets import ASSETS
+from config.assets import (
+    ASSETS,
+    EMBED_COLOR
+)
 
-# ⚙️ SYSTEM LAYER (core do ticket)
-# ainda vamos implementar, mas o command já depende dele
-# from systems.tickets.ticket_manager import open_ticket
+from systems.utils import create_embed
 
 # =========================
-# 🎫 COMMAND: TICKET
-# V1.3.1 - SYSTEM DRIVEN ENTRYPOINT
+# 🎫 TICKET COMMAND
+# V1.3.1
 # =========================
 
 @app_commands.command(
     name="ticket",
-    description="Abre o painel de suporte (sistema de tickets)"
+    description="Abre o painel de tickets"
 )
-async def ticket(interaction: discord.Interaction):
+async def ticket(
+    interaction: discord.Interaction
+):
 
-    user = interaction.user
-
-    # 🧠 validação de contexto mínima
-    if interaction.guild is None:
-        await interaction.response.send_message(
-            "❌ Este comando só pode ser usado em servidores.",
-            ephemeral=True
-        )
-        return
-
-    # ⚙️ FUTURO SYSTEM CALL (quando ticket_manager existir)
-    # await open_ticket(interaction)
-
-    # 🎨 UI LAYER (painel inicial do sistema)
-    embed = discord.Embed(
-        title="🎫 Central de Atendimento",
+    embed = create_embed(
+        title="🎫 Central de Suporte",
         description=(
-            "Selecione uma categoria para abrir um ticket.\n\n"
-            "📌 O sistema irá direcionar automaticamente seu atendimento."
+            "Utilize o sistema de tickets "
+            "para entrar em contato com "
+            "a equipe administrativa."
         ),
-        color=0x145A32
+        color=EMBED_COLOR
     )
 
     embed.add_field(
-        name="🚨 Denúncias",
-        value="Reportar usuários ou comportamentos",
+        name="📂 Atendimento",
+        value=(
+            "Selecione a categoria "
+            "correspondente ao seu suporte."
+        ),
         inline=False
     )
 
-    embed.add_field(
-        name="❓ Suporte",
-        value="Ajuda geral e dúvidas",
-        inline=False
+    embed.set_image(
+        url=ASSETS["banner_ticket"]
     )
 
-    embed.add_field(
-        name="💰 Financeiro",
-        value="Assuntos relacionados a pagamentos",
-        inline=False
+    await interaction.response.send_message(
+        embed=embed
     )
 
-    embed.add_field(
-        name="🤝 Parcerias",
-        value="Solicitações de parceria",
-        inline=False
-    )
+# =========================
+# 🚀 SETUP
+# =========================
 
-    embed.set_thumbnail(url=ASSETS["logo"])
-    embed.set_image(url=ASSETS["banner_ticket"])
+async def setup(bot: commands.Bot):
 
-    embed.set_footer(text=f"{PROJECT_NAME} • Sistema de Tickets V1.3.1")
-
-    await interaction.response.send_message(embed=embed)
+    bot.tree.add_command(ticket)

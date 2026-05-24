@@ -3,12 +3,14 @@
 # =========================
 
 PROJECT_NAME = "Conexão Roleplay"
-VERSION_NAME = "V1.3.1"
-VERSION_DESCRIPTION = "Arquitetura Modular + Core Engine de Tickets"
+
+VERSION_NAME = "V1.3.1.3"
+VERSION_DESCRIPTION = "Correção da arquitetura modular + engine principal + estabilidade do sistema"
+
 VERSION_FULL = f"{VERSION_NAME} | {VERSION_DESCRIPTION}"
 
 # =========================
-# 🌐 DISCORD IDS
+# 🌐 IDS DO DISCORD
 # =========================
 
 GUILD_ID = 1465461083757351061
@@ -23,7 +25,7 @@ SYNC_GLOBAL = True
 SYNC_GUILD = True
 
 # =========================
-# 🎛️ FEATURE FLAGS (FUTURO EXPANSÍVEL)
+# 🎛️ FEATURE FLAGS (EXPANSÃO FUTURA)
 # =========================
 
 FEATURES = {

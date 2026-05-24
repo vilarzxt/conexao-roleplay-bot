@@ -1,62 +1,58 @@
 import discord
+
+from discord.ext import commands
 from discord import app_commands
 
-from config.settings import PROJECT_NAME
-from config.assets import ASSETS
+from config.assets import (
+    EMBED_COLOR
+)
+
+from systems.utils import create_embed
 
 # =========================
-# 🔓 COMMAND: UNLOCK
-# V1.3.1 - CONTROLE DE CANAL
+# 🔓 UNLOCK COMMAND
+# V1.3.1
 # =========================
 
 @app_commands.command(
     name="unlock",
-    description="Desbloqueia o canal atual para mensagens"
+    description="Desbloqueia o canal atual"
 )
-@app_commands.checks.has_permissions(manage_channels=True)
-async def unlock(interaction: discord.Interaction):
+@app_commands.checks.has_permissions(
+    manage_channels=True
+)
+async def unlock(
+    interaction: discord.Interaction
+):
 
-    channel = interaction.channel
-    moderator = interaction.user
+    overwrite = interaction.channel.overwrites_for(
+        interaction.guild.default_role
+    )
 
-    # 🧠 validação de contexto
-    if not isinstance(channel, discord.TextChannel):
-        await interaction.response.send_message(
-            "❌ Este comando só pode ser usado em canais de texto.",
-            ephemeral=True
-        )
-        return
-
-    # ⚙️ lógica direta de desbloqueio
-    overwrite = channel.overwrites_for(interaction.guild.default_role)
     overwrite.send_messages = True
 
-    await channel.set_permissions(
+    await interaction.channel.set_permissions(
         interaction.guild.default_role,
         overwrite=overwrite
     )
 
-    # 🎨 resposta UI
-    embed = discord.Embed(
+    embed = create_embed(
         title="🔓 Canal Desbloqueado",
-        description="O envio de mensagens foi reativado para @everyone.",
-        color=0x145A32
+        description=(
+            f"O canal foi desbloqueado por "
+            f"{interaction.user.mention}"
+        ),
+        color=EMBED_COLOR
     )
 
-    embed.add_field(
-        name="📍 Canal",
-        value=channel.mention,
-        inline=False
+    await interaction.response.send_message(
+        embed=embed
     )
 
-    embed.add_field(
-        name="🛡️ Moderador",
-        value=moderator.mention,
-        inline=False
-    )
+# =========================
+# 🚀 SETUP
+# =========================
 
-    embed.set_thumbnail(url=ASSETS["logo"])
+async def setup(bot: commands.Bot):
 
-    embed.set_footer(text=f"{PROJECT_NAME} • Controle de canal")
-
-    await interaction.response.send_message(embed=embed)
+    bot.tree.add_command(unlock)

@@ -1,17 +1,22 @@
 import discord
+
+from discord.ext import commands
 from discord import app_commands
 
-from config.settings import PROJECT_NAME
-from config.assets import ASSETS
+from config.assets import (
+    EMBED_COLOR
+)
+
+from systems.utils import create_embed
 
 # =========================
-# 🧾 COMMAND: EMBED
-# V1.3.1 - UI GENERATOR
+# 🧾 EMBED COMMAND
+# V1.3.1
 # =========================
 
 @app_commands.command(
     name="embed",
-    description="Cria um embed personalizado"
+    description="Cria uma embed personalizada"
 )
 async def embed(
     interaction: discord.Interaction,
@@ -19,16 +24,20 @@ async def embed(
     mensagem: str
 ):
 
-    user = interaction.user
-
-    # 🎨 UI LAYER ONLY
-    e = discord.Embed(
+    custom_embed = create_embed(
         title=titulo,
         description=mensagem,
-        color=0x145A32
+        color=EMBED_COLOR
     )
 
-    e.set_thumbnail(url=ASSETS["logo"])
-    e.set_footer(text=f"{PROJECT_NAME} • Criado por {user.display_name}")
+    await interaction.response.send_message(
+        embed=custom_embed
+    )
 
-    await interaction.response.send_message(embed=e)
+# =========================
+# 🚀 SETUP
+# =========================
+
+async def setup(bot: commands.Bot):
+
+    bot.tree.add_command(embed)

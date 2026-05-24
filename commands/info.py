@@ -1,59 +1,72 @@
 import discord
+
+from discord.ext import commands
 from discord import app_commands
 
-from config.settings import PROJECT_NAME, VERSION_FULL
-from config.assets import ASSETS
+from config.settings import (
+    VERSION_NAME,
+    VERSION_DESCRIPTION
+)
+
+from config.assets import (
+    ASSETS,
+    EMBED_COLOR,
+    PROJECT_NAME
+)
+
+from systems.utils import create_embed
 
 # =========================
-# 📦 COMMAND: INFO
-# V1.3.1 - ORCHESTRATION LAYER
+# 📦 INFO COMMAND
+# V1.3.1
 # =========================
 
 @app_commands.command(
     name="info",
-    description="Exibe informações do sistema Conexão Roleplay"
+    description="Exibe informações do sistema"
 )
-async def info(interaction: discord.Interaction):
+async def info(
+    interaction: discord.Interaction
+):
 
-    # 🧠 contexto básico
-    user = interaction.user
-
-    # 🎨 embed informativo (somente camada de apresentação)
-    embed = discord.Embed(
+    embed = create_embed(
         title="📦 Sistema Conexão Roleplay",
-        description="Informações gerais do bot e arquitetura atual.",
-        color=0x145A32
+        color=EMBED_COLOR
     )
 
-    # 📌 dados de configuração (CONFIG LAYER)
     embed.add_field(
-        name="📛 Projeto",
+        name="🏷️ Projeto",
         value=PROJECT_NAME,
         inline=False
     )
 
     embed.add_field(
         name="📌 Versão",
-        value=VERSION_FULL,
+        value=(
+            f"{VERSION_NAME} | "
+            f"{VERSION_DESCRIPTION}"
+        ),
         inline=False
     )
 
     embed.add_field(
         name="🧠 Arquitetura",
-        value="COMMANDS → ORQUESTRAÇÃO | SYSTEMS → EXECUÇÃO | CONFIG → DADOS",
+        value="Sistema modular V1.3.1",
         inline=False
     )
 
-    embed.add_field(
-        name="👤 Solicitado por",
-        value=user.mention,
-        inline=False
+    embed.set_image(
+        url=ASSETS["banner_institucional"]
     )
 
-    # 🖼️ branding
-    embed.set_thumbnail(url=ASSETS["logo"])
-    embed.set_image(url=ASSETS["banner_institucional"])
+    await interaction.response.send_message(
+        embed=embed
+    )
 
-    embed.set_footer(text=f"{PROJECT_NAME} • V1.3.1")
+# =========================
+# 🚀 SETUP
+# =========================
 
-    await interaction.response.send_message(embed=embed)
+async def setup(bot: commands.Bot):
+
+    bot.tree.add_command(info)
