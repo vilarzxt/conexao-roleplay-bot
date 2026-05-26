@@ -1,96 +1,75 @@
 import discord
-from discord.ext import commands
-from discord import app_commands
+from systems.dropdowns import TicketSubCategoryView
 
-from config.assets import ASSETS, EMBED_COLOR, TICKET_FOOTER
-from config.settings import VERSION_NAME, TICKET_SYSTEM_ENABLED
+class TicketCategorySelect(discord.ui.Select):
 
-from systems.utils import create_embed
-from systems.views import TicketPanelView
+    def __init__(self):
 
+        options = [
 
-# =========================
-# 🎫 TICKET COMMAND
-# CONEXÃO ROLEPLAY
-# V1.3.2.1
-# =========================
+            discord.SelectOption(
+                label="Central de Denúncias",
+                description="Denúncias contra players, staff ou organizações.",
+                emoji="🚨",
+                value="denuncias"
+            ),
 
-@app_commands.command(
-    name="ticket",
-    description="Realiza o deploy do painel de tickets"
-)
-async def ticket(interaction: discord.Interaction):
+            discord.SelectOption(
+                label="Dúvidas e Reportes",
+                description="Dúvidas gerais, bugs e suporte técnico.",
+                emoji="❓",
+                value="duvidas"
+            ),
 
-    # =========================
-    # 🔒 SYSTEM CHECK
-    # =========================
+            discord.SelectOption(
+                label="Central Financeira",
+                description="VIP, coins e problemas financeiros.",
+                emoji="💰",
+                value="financeiro"
+            ),
 
-    if not TICKET_SYSTEM_ENABLED:
+            discord.SelectOption(
+                label="Central de Organizações",
+                description="Suporte operacional de organizações.",
+                emoji="🏢",
+                value="organizacoes"
+            ),
+
+            discord.SelectOption(
+                label="Central de Parceiros",
+                description="Parcerias, criadores e projetos.",
+                emoji="🤝",
+                value="parcerias"
+            )
+        ]
+
+        super().__init__(
+            placeholder="Selecione a categoria do atendimento...",
+            min_values=1,
+            max_values=1,
+            options=options,
+            custom_id="ticket_category_select"
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+
+        category = self.values[0]
+
+        # =========================
+        # 🚀 ABRE SUBCATEGORIA REAL
+        # =========================
+
+        embed = discord.Embed(
+            title="📂 Categoria Selecionada",
+            description=(
+                f"Categoria: `{category}`\n\n"
+                "Selecione a subcategoria abaixo para continuar o atendimento."
+            ),
+            color=discord.Color.blurple()
+        )
+
         await interaction.response.send_message(
-            "❌ O sistema de tickets está desativado.",
+            embed=embed,
+            view=TicketSubCategoryView(category),
             ephemeral=True
         )
-        return
-
-    # =========================
-    # 🧠 EMBED PRINCIPAL
-    # =========================
-
-    embed = create_embed(
-        title="🎫 Central Oficial de Atendimento",
-        description=(
-            "Bem-vindo à Central de Atendimento da Conexão Roleplay.\n\n"
-            "Selecione uma categoria abaixo para abrir seu ticket.\n\n"
-            "Cada setor possui uma equipe especializada para atendimento."
-        ),
-        color=EMBED_COLOR
-    )
-
-    embed.add_field(
-        name="📂 Categorias Disponíveis",
-        value=(
-            "🚨 Central de Denúncias\n"
-            "❓ Dúvidas e Reportes\n"
-            "💰 Central Financeira\n"
-            "🏢 Central de Organizações\n"
-            "🤝 Central de Parceiros"
-        ),
-        inline=False
-    )
-
-    embed.add_field(
-        name="📌 Regras",
-        value=(
-            "• Evite múltiplos tickets\n"
-            "• Envie provas quando necessário\n"
-            "• Aguarde atendimento da equipe"
-        ),
-        inline=False
-    )
-
-    embed.add_field(
-        name="⏰ Tempo Médio",
-        value="Pode variar conforme a demanda da equipe.",
-        inline=False
-    )
-
-    embed.set_image(url=ASSETS["banner_ticket"])
-
-    embed.set_footer(text=f"{TICKET_FOOTER} • {VERSION_NAME}")
-
-    # =========================
-    # 🚀 RESPONSE (FIX DEFINITIVO)
-    # =========================
-
-    await interaction.response.send_message(
-        embed=embed,
-        view=TicketPanelView()
-    )
-
-
-# =========================
-# 🚀 SETUP
-# =========================
-
-async def setup(bot: commands.Bot):
-    bot.tree.add_command(ticket)
