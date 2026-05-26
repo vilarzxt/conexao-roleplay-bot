@@ -11,7 +11,8 @@ from systems.views import TicketPanelView
 
 # =========================
 # 🎫 TICKET COMMAND
-# V1.3.2
+# CONEXÃO ROLEPLAY
+# V1.3.2.1
 # =========================
 
 @app_commands.command(
@@ -32,15 +33,15 @@ async def ticket(interaction: discord.Interaction):
         return
 
     # =========================
-    # 🧠 EMBED
+    # 🧠 EMBED PRINCIPAL
     # =========================
 
     embed = create_embed(
         title="🎫 Central Oficial de Atendimento",
         description=(
             "Bem-vindo à Central de Atendimento da Conexão Roleplay.\n\n"
-            "Utilize o sistema abaixo para abrir um ticket diretamente com o setor responsável.\n\n"
-            "Cada categoria possui uma equipe especializada para suporte mais rápido e eficiente."
+            "Selecione uma categoria abaixo para abrir seu ticket.\n\n"
+            "Cada setor possui uma equipe especializada para atendimento."
         ),
         color=EMBED_COLOR
     )
@@ -58,18 +59,18 @@ async def ticket(interaction: discord.Interaction):
     )
 
     embed.add_field(
-        name="📌 Informações",
+        name="📌 Regras",
         value=(
-            "• Evite múltiplos tickets.\n"
-            "• Envie provas quando possível.\n"
-            "• Aguarde atendimento da equipe."
+            "• Evite múltiplos tickets\n"
+            "• Envie provas quando necessário\n"
+            "• Aguarde atendimento da equipe"
         ),
         inline=False
     )
 
     embed.add_field(
         name="⏰ Tempo Médio",
-        value="O tempo pode variar conforme a demanda da equipe.",
+        value="Pode variar conforme a demanda da equipe.",
         inline=False
     )
 
@@ -78,7 +79,7 @@ async def ticket(interaction: discord.Interaction):
     embed.set_footer(text=f"{TICKET_FOOTER} • {VERSION_NAME}")
 
     # =========================
-    # 🚀 RESPONSE (CORREÇÃO CRÍTICA)
+    # 🚀 RESPONSE (FIX DEFINITIVO)
     # =========================
 
     await interaction.response.send_message(
