@@ -1,52 +1,177 @@
 import discord
 
-from systems.ticket_manager import create_ticket
+from discord.ui import (
+    View,
+    Select
+)
 
 # =========================
-# 🎛️ DROPDOWN DE TICKETS
-# V1.3.1 - CATEGORY ROUTER
+# 🎫 SUBCATEGORY SELECT
+# V1.3.2
 # =========================
 
-class TicketDropdown(discord.ui.Select):
+class TicketSubCategorySelect(Select):
 
-    def __init__(self):
+    def __init__(
+        self,
+        category: str
+    ):
 
-        options = [
+        self.category = category
 
-            discord.SelectOption(
-                label="Denúncias",
-                description="Reportar usuários ou situações",
-                emoji="🚨"
-            ),
-
-            discord.SelectOption(
-                label="Suporte",
-                description="Ajuda geral e dúvidas",
-                emoji="❓"
-            ),
-
-            discord.SelectOption(
-                label="Financeiro",
-                description="Pagamentos e compras",
-                emoji="💰"
-            ),
-
-            discord.SelectOption(
-                label="Parcerias",
-                description="Solicitações comerciais",
-                emoji="🤝"
-            )
-        ]
+        options = self.get_options()
 
         super().__init__(
-            placeholder="Selecione uma categoria...",
+
+            placeholder=(
+                "Selecione o tipo "
+                "do atendimento..."
+            ),
+
             min_values=1,
             max_values=1,
-            options=options
+
+            options=options,
+
+            custom_id=(
+                f"ticket_subcategory_"
+                f"{category}"
+            )
         )
 
     # =========================
-    # ⚙️ CALLBACK PRINCIPAL
+    # 📂 OPTIONS
+    # =========================
+
+    def get_options(self):
+
+        # =========================
+        # 🚨 DENÚNCIAS
+        # =========================
+
+        if self.category == "denuncias":
+
+            return [
+
+                discord.SelectOption(
+                    label="Denúncia contra Player",
+                    emoji="👤",
+                    value="denuncia_player"
+                ),
+
+                discord.SelectOption(
+                    label="Denúncia contra Staff",
+                    emoji="👮",
+                    value="denuncia_staff"
+                ),
+
+                discord.SelectOption(
+                    label="Denúncia contra Organização",
+                    emoji="🏢",
+                    value="denuncia_organizacao"
+                )
+            ]
+
+        # =========================
+        # ❓ DÚVIDAS
+        # =========================
+
+        if self.category == "duvidas":
+
+            return [
+
+                discord.SelectOption(
+                    label="Dúvidas Gerais",
+                    emoji="❓",
+                    value="duvidas_gerais"
+                ),
+
+                discord.SelectOption(
+                    label="Reporte / Suporte Técnico",
+                    emoji="🛠️",
+                    value="suporte_tecnico"
+                )
+            ]
+
+        # =========================
+        # 💰 FINANCEIRO
+        # =========================
+
+        if self.category == "financeiro":
+
+            return [
+
+                discord.SelectOption(
+                    label="VIP ou Problemas com Coins",
+                    emoji="💳",
+                    value="vip_coins"
+                ),
+
+                discord.SelectOption(
+                    label="Problemas Financeiros",
+                    emoji="⚠️",
+                    value="problemas_financeiros"
+                )
+            ]
+
+        # =========================
+        # 🏢 ORGANIZAÇÕES
+        # =========================
+
+        if self.category == "organizacoes":
+
+            return [
+
+                discord.SelectOption(
+                    label="Marcar Ações",
+                    emoji="🎯",
+                    value="marcar_acoes"
+                ),
+
+                discord.SelectOption(
+                    label="Suporte Organizacional",
+                    emoji="🏢",
+                    value="suporte_org"
+                ),
+
+                discord.SelectOption(
+                    label="Dúvidas Organizacionais",
+                    emoji="❓",
+                    value="duvidas_org"
+                )
+            ]
+
+        # =========================
+        # 🤝 PARCERIAS
+        # =========================
+
+        if self.category == "parcerias":
+
+            return [
+
+                discord.SelectOption(
+                    label="Criadores de Conteúdo",
+                    emoji="🎥",
+                    value="criadores"
+                ),
+
+                discord.SelectOption(
+                    label="Projetos / Servidores",
+                    emoji="🤝",
+                    value="projetos_servidores"
+                ),
+
+                discord.SelectOption(
+                    label="Dúvidas de Parceria",
+                    emoji="❓",
+                    value="duvidas_parceria"
+                )
+            ]
+
+        return []
+
+    # =========================
+    # ⚡ CALLBACK
     # =========================
 
     async def callback(
@@ -54,37 +179,41 @@ class TicketDropdown(discord.ui.Select):
         interaction: discord.Interaction
     ):
 
-        categoria = self.values[0]
+        subcategory = self.values[0]
 
-        # ⚙️ chama o core engine
-        channel = await create_ticket(
-            interaction,
-            categoria
-        )
+        # =========================
+        # 🚧 PLACEHOLDER
+        # =========================
 
-        if channel is None:
-
-            await interaction.response.send_message(
-                "❌ Erro ao criar ticket.",
-                ephemeral=True
-            )
-
-            return
-
-        # ✅ resposta ao usuário
         await interaction.response.send_message(
-            f"✅ Ticket criado: {channel.mention}",
+
+            (
+                f"📂 Subcategoria selecionada:\n"
+                f"`{subcategory}`\n\n"
+
+                "⚠️ O ticket ainda será "
+                "criado pelo "
+                "ticket_manager.py"
+            ),
+
             ephemeral=True
         )
 
 # =========================
-# 🧩 VIEW DO DROPDOWN
+# 🎫 SUBCATEGORY VIEW
 # =========================
 
-class TicketView(discord.ui.View):
+class TicketSubCategoryView(View):
 
-    def __init__(self):
+    def __init__(
+        self,
+        category: str
+    ):
 
         super().__init__(timeout=None)
 
-        self.add_item(TicketDropdown())
+        self.add_item(
+            TicketSubCategorySelect(
+                category
+            )
+        )

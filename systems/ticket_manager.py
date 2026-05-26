@@ -1,95 +1,158 @@
+# =========================
+# 🎫 TICKET MANAGER ENGINE
+# V1.3.2 - FINAL (REFATORADO)
+# =========================
+
 import discord
+import datetime
 
-from config.settings import PROJECT_NAME
-from config.assets import ASSETS
+from systems.permissions import can_close_ticket
+from systems.transcripts import TranscriptBuilder
+from systems.router import TicketRouter
+
 
 # =========================
-# 🎫 TICKET MANAGER
-# V1.3.1 - CORE ENGINE
+# 🧠 CORE MANAGER
 # =========================
 
-async def create_ticket(
-    interaction: discord.Interaction,
-    categoria: str
-):
+class TicketManager:
 
-    guild = interaction.guild
-    user = interaction.user
+    def __init__(self, bot):
 
-    # 🧠 segurança básica
-    if guild is None:
-        return None
+        self.bot = bot
+        self.router = TicketRouter(bot)
+        self.transcripts = TranscriptBuilder()
+
 
     # =========================
-    # 📂 DEFINIÇÃO DE NOME
+    # 🔒 CLOSE TICKET FLOW
     # =========================
 
-    ticket_name = f"ticket-{user.name}".lower()
+    async def close_ticket(
+        self,
+        interaction: discord.Interaction,
+        reason: str = "Não informado",
+        rating: int = None,
+        feedback: str = None
+    ):
 
-    # =========================
-    # 🔒 PERMISSÕES BASE
-    # =========================
+        channel = interaction.channel
+        user = interaction.user
+        guild = interaction.guild
 
-    overwrites = {
+        # =========================
+        # 🔐 PERMISSION CHECK
+        # =========================
 
-        guild.default_role: discord.PermissionOverwrite(
-            view_channel=False
-        ),
+        roles = [r.name.lower().replace(" ", "_") for r in user.roles]
 
-        user: discord.PermissionOverwrite(
-            view_channel=True,
-            send_messages=True,
-            read_message_history=True
+        if not can_close_ticket(roles, "generic"):
+
+            return await interaction.response.send_message(
+                "❌ Você não tem permissão para fechar este ticket.",
+                ephemeral=True
+            )
+
+
+        # =========================
+        # 📌 FEEDBACK EMBED
+        # =========================
+
+        embed = discord.Embed(
+            title="🔒 Ticket Encerrado",
+            color=0xE74C3C,
+            timestamp=datetime.datetime.utcnow()
         )
-    }
 
-    # =========================
-    # 📁 CRIAÇÃO DO CANAL
-    # =========================
+        embed.add_field(
+            name="👤 Fechado por",
+            value=user.mention,
+            inline=False
+        )
 
-    channel = await guild.create_text_channel(
-        name=ticket_name,
-        overwrites=overwrites,
-        reason=f"Ticket criado por {user}"
-    )
+        embed.add_field(
+            name="📌 Motivo",
+            value=reason,
+            inline=False
+        )
 
-    # =========================
-    # 🎨 EMBED INICIAL
-    # =========================
+        if rating is not None:
 
-    embed = discord.Embed(
-        title="🎫 Ticket Criado",
-        description=(
-            f"Olá {user.mention}, "
-            "seu ticket foi criado com sucesso."
-        ),
-        color=0x145A32
-    )
+            embed.add_field(
+                name="⭐ Avaliação",
+                value=f"{rating}/5",
+                inline=True
+            )
 
-    embed.add_field(
-        name="📂 Categoria",
-        value=categoria,
-        inline=False
-    )
+        if feedback:
 
-    embed.add_field(
-        name="🧠 Sistema",
-        value="Core Engine V1.3.1",
-        inline=False
-    )
+            embed.add_field(
+                name="📝 Feedback",
+                value=feedback,
+                inline=False
+            )
 
-    embed.set_thumbnail(url=ASSETS["logo"])
-    embed.set_footer(
-        text=f"{PROJECT_NAME} • Sistema de Tickets"
-    )
 
-    # =========================
-    # 📨 ENVIO NO TICKET
-    # =========================
+        # =========================
+        # 📤 DM USER (NOTIFICAÇÃO)
+        # =========================
 
-    await channel.send(
-        content=user.mention,
-        embed=embed
-    )
+        try:
 
-    return channel
+            await user.send(
+                embed=discord.Embed(
+                    title="📨 Seu ticket foi encerrado",
+                    description=(
+                        f"Seu atendimento em `{channel.name}` foi finalizado.\n\n"
+                        f"📌 Motivo: {reason}\n"
+                        f"⭐ Avaliação: {rating if rating else 'Não informado'}"
+                    ),
+                    color=0x2ECC71
+                )
+            )
+
+        except:
+            pass
+
+
+        # =========================
+        # 📜 TRANSCRIPT ENGINE (UNIFICADO)
+        # =========================
+
+        try:
+
+            await self.transcripts.send_transcript(
+                channel=channel,
+                guild=guild,
+                user=user
+            )
+
+        except Exception as e:
+
+            print(f"[TRANSCRIPT ERROR] {e}")
+
+
+        # =========================
+        # 📊 FEEDBACK LOG (STAFF)
+        # =========================
+
+        log_channel = discord.utils.get(
+            guild.channels,
+            name="logs-tickets"
+        )
+
+        if log_channel:
+
+            await log_channel.send(embed=embed)
+
+
+        # =========================
+        # 🧹 FINALIZAÇÃO
+        # =========================
+
+        await interaction.response.send_message(
+            "🔒 Ticket encerrado com sucesso.",
+            ephemeral=True
+        )
+
+        await channel.delete(reason="Ticket fechado via sistema")

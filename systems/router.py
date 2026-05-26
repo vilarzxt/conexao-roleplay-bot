@@ -1,0 +1,222 @@
+# =========================
+# 🧭 TICKET ROUTER ENGINE
+# V1.3.2 - PRODUCTION LEVEL
+# =========================
+
+import discord
+
+from systems.permissions import (
+    TICKET_RULES,
+    can_access_ticket,
+    get_user_highest_level
+)
+
+
+# =========================
+# 🧠 SQUADS (CATEGORIAS INTERNAS)
+# =========================
+
+SQUADS = {
+
+    "MONITOR_TEAM": "monitor-team",
+    "SUPERVISOR_TEAM": "supervisor-team",
+    "TECH_TEAM": "tech-team",
+    "COORD_TEAM": "coord-team",
+    "COORD_EXEC_TEAM": "coord-exec-team",
+    "EXEC_TEAM": "exec-team",
+    "DEV_TEAM": "dev-team"
+}
+
+
+# =========================
+# 🧭 ROUTER PRINCIPAL
+# =========================
+
+class TicketRouter:
+
+    def __init__(self, bot):
+        self.bot = bot
+
+
+    # =========================
+    # 🔍 RESOLVE TICKET RULE
+    # =========================
+
+    def resolve_rule(self, ticket_key: str) -> dict:
+        return TICKET_RULES.get(ticket_key, None)
+
+
+    # =========================
+    # 👥 RESOLVE SQUAD
+    # =========================
+
+    def resolve_squad(self, ticket_key: str) -> str:
+
+        rule = self.resolve_rule(ticket_key)
+
+        if not rule:
+            return SQUADS["MONITOR_TEAM"]
+
+        return SQUADS.get(rule["route"], SQUADS["MONITOR_TEAM"])
+
+
+    # =========================
+    # 🔐 CHECK ACCESS
+    # =========================
+
+    def can_user_access(self, member: discord.Member, ticket_key: str) -> bool:
+
+        roles = [r.name.lower().replace(" ", "_") for r in member.roles]
+
+        return can_access_ticket(roles, ticket_key)
+
+
+    # =========================
+    # 🧠 CREATE TICKET CHANNEL
+    # =========================
+
+    async def create_ticket_channel(
+        self,
+        interaction: discord.Interaction,
+        ticket_key: str,
+        category: discord.CategoryChannel,
+        ticket_id: int
+    ):
+
+        guild = interaction.guild
+
+        rule = self.resolve_rule(ticket_key)
+
+        squad = self.resolve_squad(ticket_key)
+
+        channel_name = f"🎫-{ticket_key}-{ticket_id}"
+
+
+        # =========================
+        # 🔐 PERMISSION OVERLAY
+        # =========================
+
+        overwrites = {
+
+            guild.default_role: discord.PermissionOverwrite(
+                view_channel=False
+            ),
+
+            interaction.user: discord.PermissionOverwrite(
+                view_channel=True,
+                send_messages=True,
+                read_message_history=True
+            )
+        }
+
+
+        # =========================
+        # 👥 SQUAD ACCESS (STAFF)
+        # =========================
+
+        staff_role = discord.utils.get(
+            guild.roles,
+            name=squad
+        )
+
+        if staff_role:
+
+            overwrites[staff_role] = discord.PermissionOverwrite(
+                view_channel=True,
+                send_messages=True,
+                read_message_history=True
+            )
+
+
+        # =========================
+        # 🔥 EXEC TEAM OVERRIDE
+        # =========================
+
+        exec_role = discord.utils.get(
+            guild.roles,
+            name="exec-team"
+        )
+
+        if exec_role:
+
+            overwrites[exec_role] = discord.PermissionOverwrite(
+                view_channel=True,
+                send_messages=True,
+                read_message_history=True
+            )
+
+
+        # =========================
+        # 🎫 CHANNEL CREATE
+        # =========================
+
+        channel = await guild.create_text_channel(
+            name=channel_name,
+            category=category,
+            overwrites=overwrites,
+            reason=f"Ticket created: {ticket_key}"
+        )
+
+
+        # =========================
+        # 📌 INITIAL STATE MESSAGE
+        # =========================
+
+        await channel.send(
+            embed=discord.Embed(
+                title="🎫 Ticket Aberto",
+                description=(
+                    f"**Categoria:** `{ticket_key}`\n"
+                    f"**Responsável inicial:** {interaction.user.mention}\n"
+                    f"**Squad designado:** `{squad}`"
+                ),
+                color=0x2ECC71
+            )
+        )
+
+        return channel
+
+
+    # =========================
+    # 🔄 MOVE TICKET (ALTERAR SETOR)
+    # =========================
+
+    async def move_ticket(
+        self,
+        channel: discord.TextChannel,
+        new_category: discord.CategoryChannel,
+        ticket_key: str
+    ):
+
+        await channel.edit(
+            category=new_category,
+            reason=f"Ticket moved to new category: {ticket_key}"
+        )
+
+
+    # =========================
+    # 🧠 ROUTE DECISION (CORE)
+    # =========================
+
+    def route_ticket(self, ticket_key: str) -> dict:
+
+        rule = self.resolve_rule(ticket_key)
+
+        if not rule:
+            return {
+                "squad": SQUADS["MONITOR_TEAM"],
+                "min_level": 0
+            }
+
+        return {
+            "squad": SQUADS.get(rule["route"], SQUADS["MONITOR_TEAM"]),
+            "min_level": rule["min_level"]
+        }
+
+
+# =========================
+# 🚀 FACTORY
+# =========================
+
+def setup_router(bot):
+    return TicketRouter(bot)

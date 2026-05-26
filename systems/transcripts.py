@@ -1,85 +1,161 @@
-import discord
-from datetime import datetime
-
 # =========================
 # 📜 TRANSCRIPT ENGINE
-# V1.3.1 - AUDITORIA DE TICKETS
+# V1.3.2 - PRODUCTION CORE
 # =========================
 
-async def generate_transcript(
-    channel: discord.TextChannel
-):
+import discord
+import datetime
+import html
 
-    messages = []
+
+# =========================
+# 🧠 TRANSCRIPT BUILDER
+# =========================
+
+class TranscriptBuilder:
+
+    def __init__(self):
+        pass
+
 
     # =========================
-    # 📥 COLETA DE MENSAGENS
+    # 📜 BUILD RAW TEXT TRANSCRIPT
     # =========================
 
-    async for message in channel.history(
-        limit=None,
-        oldest_first=True
+    async def build_text(self, channel: discord.TextChannel, limit: int = 500):
+
+        messages = []
+
+        async for msg in channel.history(limit=limit, oldest_first=True):
+
+            timestamp = msg.created_at.strftime("%Y-%m-%d %H:%M:%S")
+
+            messages.append(
+                f"[{timestamp}] {msg.author} ➜ {msg.content}"
+            )
+
+        return "\n".join(messages)
+
+
+    # =========================
+    # 🌐 BUILD HTML TRANSCRIPT
+    # =========================
+
+    async def build_html(self, channel: discord.TextChannel, limit: int = 500):
+
+        messages_html = []
+
+        async for msg in channel.history(limit=limit, oldest_first=True):
+
+            timestamp = msg.created_at.strftime("%Y-%m-%d %H:%M:%S")
+
+            content = html.escape(msg.content)
+
+            messages_html.append(
+                f"""
+                <div class="msg">
+                    <span class="time">[{timestamp}]</span>
+                    <span class="author">{msg.author}</span>
+                    <div class="content">{content}</div>
+                </div>
+                """
+            )
+
+        html_output = f"""
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>Transcript - {channel.name}</title>
+            <style>
+                body {{
+                    font-family: Arial;
+                    background: #1e1e1e;
+                    color: #fff;
+                    padding: 20px;
+                }}
+                .msg {{
+                    margin-bottom: 10px;
+                    padding: 10px;
+                    background: #2c2c2c;
+                    border-radius: 8px;
+                }}
+                .time {{
+                    color: #888;
+                    font-size: 12px;
+                }}
+                .author {{
+                    font-weight: bold;
+                    color: #2ecc71;
+                }}
+                .content {{
+                    margin-top: 5px;
+                }}
+            </style>
+        </head>
+        <body>
+            <h2>📜 Transcript - {channel.name}</h2>
+            {"".join(messages_html)}
+        </body>
+        </html>
+        """
+
+        return html_output
+
+
+    # =========================
+    # 📤 SEND TRANSCRIPT (STAFF + USER)
+    # =========================
+
+    async def send_transcript(
+        self,
+        channel: discord.TextChannel,
+        guild: discord.Guild,
+        user: discord.Member
     ):
 
-        timestamp = message.created_at.strftime(
-            "%d/%m/%Y %H:%M"
+        text = await self.build_text(channel)
+        html_file = await self.build_html(channel)
+
+        timestamp = datetime.datetime.utcnow().strftime("%Y%m%d-%H%M%S")
+
+        txt_file = discord.File(
+            fp=bytes(text, "utf-8"),
+            filename=f"transcript-{channel.name}-{timestamp}.txt"
         )
 
-        content = (
-            f"[{timestamp}] "
-            f"{message.author}: "
-            f"{message.content}"
+        html_file_obj = discord.File(
+            fp=bytes(html_file, "utf-8"),
+            filename=f"transcript-{channel.name}-{timestamp}.html"
         )
 
-        messages.append(content)
 
-    # =========================
-    # 📄 TEXTO FINAL
-    # =========================
+        # =========================
+        # 📊 STAFF LOG CHANNEL
+        # =========================
 
-    transcript_text = "\n".join(messages)
+        log_channel = discord.utils.get(
+            guild.channels,
+            name="logs-tickets"
+        )
 
-    return transcript_text
+        if log_channel:
 
-# =========================
-# 📤 ENVIO DE LOG
-# =========================
+            await log_channel.send(
+                content=f"📜 Transcript gerado para `{channel.name}`",
+                files=[txt_file, html_file_obj]
+            )
 
-async def send_transcript_log(
-    log_channel: discord.TextChannel,
-    ticket_channel: discord.TextChannel,
-    transcript: str
-):
 
-    # =========================
-    # 📦 EMBED DE LOG
-    # =========================
+        # =========================
+        # 📨 DM USER COPY
+        # =========================
 
-    embed = discord.Embed(
-        title="📜 Transcript Gerado",
-        description=(
-            f"Ticket: {ticket_channel.name}"
-        ),
-        color=0x145A32,
-        timestamp=datetime.utcnow()
-    )
+        try:
 
-    embed.add_field(
-        name="📂 Canal",
-        value=ticket_channel.mention,
-        inline=False
-    )
+            await user.send(
+                content="📨 Aqui está o transcript do seu atendimento.",
+                files=[txt_file]
+            )
 
-    # =========================
-    # 📄 ENVIO DO ARQUIVO
-    # =========================
-
-    file = discord.File(
-        fp=bytes(transcript, "utf-8"),
-        filename=f"{ticket_channel.name}.txt"
-    )
-
-    await log_channel.send(
-        embed=embed,
-        file=file
-    )
+        except:
+            pass

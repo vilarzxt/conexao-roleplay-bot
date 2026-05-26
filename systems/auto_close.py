@@ -1,71 +1,177 @@
-import asyncio
-import discord
-
 # =========================
 # ⏰ AUTO CLOSE ENGINE
-# V1.3.1 - INACTIVITY MONITOR
+# V1.3.2 - FINAL (PRODUCTION)
 # =========================
 
-# 🧠 controle simples em memória
-ticket_timers = {}
+import asyncio
+import datetime
+import discord
+
 
 # =========================
-# 🚀 INICIAR MONITORAMENTO
+# 🧠 ACTIVE TIMERS REGISTRY
 # =========================
 
-async def start_ticket_timer(
-    channel: discord.TextChannel,
-    timeout: int = 3600
-):
+ACTIVE_TIMERS = {}
 
-    # cancela timer anterior
-    await cancel_ticket_timer(channel.id)
-
-    # cria nova task
-    task = asyncio.create_task(
-        auto_close_ticket(channel, timeout)
-    )
-
-    ticket_timers[channel.id] = task
 
 # =========================
-# ❌ CANCELAR TIMER
+# ⏰ AUTO CLOSE MANAGER
 # =========================
 
-async def cancel_ticket_timer(
-    channel_id: int
-):
+class AutoCloseManager:
 
-    task = ticket_timers.get(channel_id)
+    def __init__(self, bot):
+        self.bot = bot
 
-    if task:
 
-        task.cancel()
+    # =========================
+    # 🔍 CHECK ACTIVE TIMER
+    # =========================
 
-        del ticket_timers[channel_id]
+    def is_active(self, channel_id: int) -> bool:
+        return channel_id in ACTIVE_TIMERS
 
-# =========================
-# 🔒 FECHAMENTO AUTOMÁTICO
-# =========================
 
-async def auto_close_ticket(
-    channel: discord.TextChannel,
-    timeout: int
-):
+    # =========================
+    # 🚀 START TIMER
+    # =========================
 
-    try:
+    async def start_timer(
+        self,
+        channel: discord.TextChannel,
+        user: discord.Member,
+        timeout_seconds: int
+    ):
 
-        # ⏳ espera inatividade
-        await asyncio.sleep(timeout)
+        # cancela timer anterior se existir
+        if channel.id in ACTIVE_TIMERS:
 
-        # 📢 aviso final
-        await channel.send(
-            "⏰ Ticket fechado automaticamente por inatividade."
+            ACTIVE_TIMERS[channel.id].cancel()
+            del ACTIVE_TIMERS[channel.id]
+
+        task = asyncio.create_task(
+            self._run_timer(channel, user, timeout_seconds)
         )
 
-        # 🗑️ remove canal
-        await channel.delete()
+        ACTIVE_TIMERS[channel.id] = task
 
-    except asyncio.CancelledError:
-        # timer reiniciado/cancelado
-        return
+
+    # =========================
+    # 🔄 RESET TIMER (ACTIVITY)
+    # =========================
+
+    async def reset_timer(self, channel: discord.TextChannel):
+
+        if channel.id in ACTIVE_TIMERS:
+
+            try:
+                ACTIVE_TIMERS[channel.id].cancel()
+            except:
+                pass
+
+            del ACTIVE_TIMERS[channel.id]
+
+
+    # =========================
+    # ⏳ TIMER CORE LOOP
+    # =========================
+
+    async def _run_timer(
+        self,
+        channel: discord.TextChannel,
+        user: discord.Member,
+        timeout_seconds: int
+    ):
+
+        try:
+
+            warning_50 = int(timeout_seconds * 0.5)
+            warning_75 = int(timeout_seconds * 0.75)
+
+            # =========================
+            # ⚠️ WARNING 1
+            # =========================
+
+            await asyncio.sleep(warning_50)
+
+            if channel.id not in ACTIVE_TIMERS:
+                return
+
+            await channel.send(
+                f"⚠️ {user.mention}, seu ticket ficará inativo em breve."
+            )
+
+            # =========================
+            # ⚠️ WARNING 2
+            # =========================
+
+            await asyncio.sleep(warning_75 - warning_50)
+
+            if channel.id not in ACTIVE_TIMERS:
+                return
+
+            await channel.send(
+                f"⚠️ Último aviso {user.mention}: ticket será encerrado em breve."
+            )
+
+            # =========================
+            # ⏰ FINAL WAIT
+            # =========================
+
+            await asyncio.sleep(timeout_seconds - warning_75)
+
+            if channel.id not in ACTIVE_TIMERS:
+                return
+
+            await self._close_due_inactivity(channel, user)
+
+        except asyncio.CancelledError:
+            return
+
+        except Exception as e:
+            print(f"[AUTO_CLOSE ERROR] {e}")
+
+
+    # =========================
+    # 🔒 AUTO CLOSE EXECUTION
+    # =========================
+
+    async def _close_due_inactivity(
+        self,
+        channel: discord.TextChannel,
+        user: discord.Member
+    ):
+
+        try:
+
+            await channel.send(
+                "⏰ Ticket encerrado automaticamente por inatividade."
+            )
+
+            # remove timer
+            if channel.id in ACTIVE_TIMERS:
+                del ACTIVE_TIMERS[channel.id]
+
+            # DM user
+            try:
+
+                await user.send(
+                    f"📨 Seu ticket `{channel.name}` foi encerrado por inatividade."
+                )
+
+            except:
+                pass
+
+            await channel.delete(reason="Auto-close por inatividade")
+
+        except Exception as e:
+            print(f"[AUTO_CLOSE CLOSE ERROR] {e}")
+
+
+# =========================
+# 🚀 FACTORY
+# =========================
+
+def setup_auto_close(bot):
+    return AutoCloseManager(bot)

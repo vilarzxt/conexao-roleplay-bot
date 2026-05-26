@@ -1,129 +1,356 @@
 import discord
 
-from config.assets import ASSETS
-from config.settings import PROJECT_NAME
+from config.assets import (
+    EMBED_COLOR,
+    ASSETS
+)
+
+from systems.utils import (
+    create_embed
+)
 
 # =========================
-# 📂 TICKET TEMPLATES
-# V1.3.1 - CATEGORY ENGINE
+# 🎫 TICKET TEMPLATES
+# V1.3.2
 # =========================
 
-TICKET_TEMPLATES = {
+def get_ticket_template(
+    subcategory: str
+):
 
     # =========================
     # 🚨 DENÚNCIAS
     # =========================
 
-    "Denúncias": {
+    if subcategory == "denuncia_player":
 
-        "title": "🚨 Central de Denúncias",
+        embed = create_embed(
 
-        "description": (
-            "Descreva detalhadamente a denúncia.\n\n"
-            "📌 Envie provas sempre que possível."
-        ),
+            title="🚨 Denúncia contra Player",
 
-        "color": 0xB03A2E
-    },
+            description=(
+                "Preencha corretamente "
+                "as informações abaixo "
+                "para prosseguir com "
+                "a denúncia."
+            ),
+
+            color=EMBED_COLOR
+        )
+
+        embed.add_field(
+
+            name="📋 Informações Necessárias",
+
+            value=(
+                "• Nick do jogador\n"
+                "• ID do jogador\n"
+                "• Motivo da denúncia\n"
+                "• Data e horário\n"
+                "• Link das provas\n"
+                "• Informações adicionais"
+            ),
+
+            inline=False
+        )
+
+    elif subcategory == "denuncia_staff":
+
+        embed = create_embed(
+
+            title="👮 Denúncia contra Staff",
+
+            description=(
+                "Envie todas as informações "
+                "necessárias para análise "
+                "da equipe administrativa."
+            ),
+
+            color=EMBED_COLOR
+        )
+
+        embed.add_field(
+
+            name="📋 Informações Necessárias",
+
+            value=(
+                "• Nome da staff\n"
+                "• Cargo\n"
+                "• Motivo\n"
+                "• Data e horário\n"
+                "• Link das provas\n"
+                "• Informações adicionais"
+            ),
+
+            inline=False
+        )
+
+    elif subcategory == "denuncia_organizacao":
+
+        embed = create_embed(
+
+            title="🏢 Denúncia contra Organização",
+
+            description=(
+                "Informe corretamente "
+                "os dados da organização "
+                "envolvida."
+            ),
+
+            color=EMBED_COLOR
+        )
+
+        embed.add_field(
+
+            name="📋 Informações Necessárias",
+
+            value=(
+                "• Nome da organização\n"
+                "• Integrantes envolvidos\n"
+                "• Ocorrido\n"
+                "• Data e horário\n"
+                "• Link das provas"
+            ),
+
+            inline=False
+        )
 
     # =========================
-    # ❓ SUPORTE
+    # ❓ DÚVIDAS
     # =========================
 
-    "Suporte": {
+    elif subcategory == "duvidas_gerais":
 
-        "title": "❓ Central de Suporte",
+        embed = create_embed(
 
-        "description": (
-            "Explique sua dúvida ou problema.\n\n"
-            "📌 Nossa equipe responderá em breve."
-        ),
+            title="❓ Dúvidas Gerais",
 
-        "color": 0x145A32
-    },
+            description=(
+                "Descreva sua dúvida "
+                "com o máximo de detalhes."
+            ),
+
+            color=EMBED_COLOR
+        )
+
+    elif subcategory == "suporte_tecnico":
+
+        embed = create_embed(
+
+            title="🛠️ Suporte Técnico",
+
+            description=(
+                "Informe o problema "
+                "técnico encontrado."
+            ),
+
+            color=EMBED_COLOR
+        )
+
+        embed.add_field(
+
+            name="📋 Informações Necessárias",
+
+            value=(
+                "• Plataforma\n"
+                "• Problema encontrado\n"
+                "• Frequência do problema\n"
+                "• Sistema afetado\n"
+                "• Prints ou vídeos"
+            ),
+
+            inline=False
+        )
 
     # =========================
     # 💰 FINANCEIRO
     # =========================
 
-    "Financeiro": {
+    elif subcategory == "vip_coins":
 
-        "title": "💰 Atendimento Financeiro",
+        embed = create_embed(
 
-        "description": (
-            "Informe detalhes relacionados "
-            "ao pagamento ou compra."
-        ),
+            title="💳 VIP ou Problemas com Coins",
 
-        "color": 0xB9770E
-    },
+            description=(
+                "Envie as informações "
+                "financeiras corretamente."
+            ),
+
+            color=EMBED_COLOR
+        )
+
+        embed.add_field(
+
+            name="📋 Informações Necessárias",
+
+            value=(
+                "• ID da compra\n"
+                "• Produto adquirido\n"
+                "• Comprovante\n"
+                "• ID do jogador"
+            ),
+
+            inline=False
+        )
+
+    elif subcategory == "problemas_financeiros":
+
+        embed = create_embed(
+
+            title="⚠️ Problemas Financeiros",
+
+            description=(
+                "Descreva o problema "
+                "financeiro ocorrido."
+            ),
+
+            color=EMBED_COLOR
+        )
+
+        embed.add_field(
+
+            name="📋 Informações Necessárias",
+
+            value=(
+                "• Problema ocorrido\n"
+                "• ID da conta\n"
+                "• Data do ocorrido\n"
+                "• Prints ou provas"
+            ),
+
+            inline=False
+        )
+
+    # =========================
+    # 🏢 ORGANIZAÇÕES
+    # =========================
+
+    elif subcategory == "marcar_acoes":
+
+        embed = create_embed(
+
+            title="🎯 Marcar Ações",
+
+            description=(
+                "Preencha as informações "
+                "da ação organizacional."
+            ),
+
+            color=EMBED_COLOR
+        )
+
+    elif subcategory == "suporte_org":
+
+        embed = create_embed(
+
+            title="🏢 Suporte Organizacional",
+
+            description=(
+                "Informe o problema "
+                "relacionado à organização."
+            ),
+
+            color=EMBED_COLOR
+        )
+
+    elif subcategory == "duvidas_org":
+
+        embed = create_embed(
+
+            title="❓ Dúvidas Organizacionais",
+
+            description=(
+                "Envie sua dúvida "
+                "organizacional."
+            ),
+
+            color=EMBED_COLOR
+        )
 
     # =========================
     # 🤝 PARCERIAS
     # =========================
 
-    "Parcerias": {
+    elif subcategory == "criadores":
 
-        "title": "🤝 Central de Parcerias",
+        embed = create_embed(
 
-        "description": (
-            "Envie sua proposta comercial "
-            "ou solicitação de parceria."
-        ),
+            title="🎥 Criadores de Conteúdo",
 
-        "color": 0x1F618D
-    }
-}
+            description=(
+                "Envie suas informações "
+                "para análise de parceria."
+            ),
 
-# =========================
-# 🎨 GERADOR DE EMBED
-# =========================
+            color=EMBED_COLOR
+        )
 
-def build_ticket_embed(
-    categoria: str,
-    usuario: discord.Member
-):
+        embed.add_field(
 
-    template = TICKET_TEMPLATES.get(categoria)
+            name="📋 Informações Necessárias",
 
-    # fallback de segurança
-    if not template:
+            value=(
+                "• Canal ou rede social\n"
+                "• Estatísticas\n"
+                "• Tipo de conteúdo\n"
+                "• ID in-game"
+            ),
 
-        template = {
+            inline=False
+        )
 
-            "title": "🎫 Ticket",
+    elif subcategory == "projetos_servidores":
 
-            "description": "Ticket criado.",
+        embed = create_embed(
 
-            "color": 0x145A32
-        }
+            title="🤝 Projetos / Servidores",
+
+            description=(
+                "Envie sua proposta "
+                "de parceria."
+            ),
+
+            color=EMBED_COLOR
+        )
+
+    elif subcategory == "duvidas_parceria":
+
+        embed = create_embed(
+
+            title="❓ Dúvidas de Parceria",
+
+            description=(
+                "Envie sua dúvida "
+                "sobre parcerias."
+            ),
+
+            color=EMBED_COLOR
+        )
 
     # =========================
-    # 🎨 EMBED
+    # ⚠️ DEFAULT
     # =========================
 
-    embed = discord.Embed(
-        title=template["title"],
-        description=template["description"],
-        color=template["color"]
-    )
+    else:
 
-    embed.add_field(
-        name="👤 Usuário",
-        value=usuario.mention,
-        inline=False
-    )
+        embed = create_embed(
 
-    embed.add_field(
-        name="📂 Categoria",
-        value=categoria,
-        inline=False
-    )
+            title="🎫 Ticket",
 
-    embed.set_thumbnail(url=ASSETS["logo"])
+            description=(
+                "Seu ticket foi criado."
+            ),
 
-    embed.set_footer(
-        text=f"{PROJECT_NAME} • Sistema de Tickets"
+            color=EMBED_COLOR
+        )
+
+    # =========================
+    # 🖼️ BANNER
+    # =========================
+
+    embed.set_image(
+        url=ASSETS["banner_ticket"]
     )
 
     return embed

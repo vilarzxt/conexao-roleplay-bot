@@ -1,6 +1,7 @@
 # =========================
 # 🖼️ ASSETS OFICIAIS
-# V1.3.1
+# CONEXÃO ROLEPLAY
+# V1.3.2
 # =========================
 
 ASSETS = {
@@ -49,5 +50,9 @@ ERROR_COLOR = 0xE74C3C
 PROJECT_NAME = "Conexão Roleplay"
 
 FOOTER_TEXT = (
-    "Conexão Roleplay • Sistema Oficial"
+    "©️ Conexão Roleplay, todos os direitos reservados."
+)
+
+TICKET_FOOTER = (
+    "©️ Conexão Roleplay, todos os direitos reservados."
 )
