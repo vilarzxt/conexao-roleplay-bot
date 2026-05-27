@@ -15,19 +15,21 @@ from config.settings import (
 )
 
 from systems.utils import create_embed
-from systems.views import TicketPanelView
 
+from systems.views import (
+    TicketPanelView
+)
 
 # =========================
 # 🎫 TICKET COMMAND
-# CONEXÃO ROLEPLAY
-# V1.3.2.4
+# V1.3.2.9
 # =========================
 
 @app_commands.command(
     name="ticket",
     description="Realiza o deploy do painel de tickets"
 )
+
 async def ticket(
     interaction: discord.Interaction
 ):
@@ -38,68 +40,55 @@ async def ticket(
 
     if not TICKET_SYSTEM_ENABLED:
 
-        await interaction.response.send_message(
+        return await interaction.response.send_message(
+
             "❌ O sistema de tickets está desativado.",
+
             ephemeral=True
         )
 
-        return
-
     # =========================
-    # 🧠 PANEL EMBED
+    # 🧠 EMBED
     # =========================
 
     embed = create_embed(
+
         title="🎫 Central Oficial de Atendimento",
 
         description=(
+
             "Bem-vindo à Central de Atendimento "
             "da Conexão Roleplay.\n\n"
 
             "Selecione abaixo a categoria "
-            "do atendimento para abrir "
-            "um ticket automaticamente."
+            "do seu atendimento."
         ),
 
         color=EMBED_COLOR
     )
 
     # =========================
-    # 📂 CATEGORIES
+    # 📂 CATEGORIAS
     # =========================
 
     embed.add_field(
-        name="📂 Categorias Disponíveis",
+
+        name="📂 Categorias",
 
         value=(
-            "🚨 Central de Denúncias\n"
-            "❓ Dúvidas e Reportes\n"
-            "💰 Central Financeira\n"
-            "🏢 Central de Organizações\n"
-            "🤝 Central de Parceiros"
+
+            "🚨 Denúncias\n"
+            "❓ Dúvidas\n"
+            "💰 Financeiro\n"
+            "🏢 Organizações\n"
+            "🤝 Parcerias"
         ),
 
         inline=False
     )
 
     # =========================
-    # 📌 INFO
-    # =========================
-
-    embed.add_field(
-        name="📌 Informações",
-
-        value=(
-            "• Evite abrir múltiplos tickets.\n"
-            "• Aguarde o atendimento da equipe.\n"
-            "• Envie provas quando necessário."
-        ),
-
-        inline=False
-    )
-
-    # =========================
-    # 🖼️ IMAGE
+    # 🖼️ BANNER
     # =========================
 
     embed.set_image(
@@ -111,18 +100,23 @@ async def ticket(
     # =========================
 
     embed.set_footer(
-        text=f"{TICKET_FOOTER} • {VERSION_NAME}"
+
+        text=(
+            f"{TICKET_FOOTER} • "
+            f"{VERSION_NAME}"
+        )
     )
 
     # =========================
-    # 🚀 SEND PANEL
+    # 🚀 RESPONSE
     # =========================
 
     await interaction.response.send_message(
+
         embed=embed,
+
         view=TicketPanelView()
     )
-
 
 # =========================
 # 🚀 SETUP
