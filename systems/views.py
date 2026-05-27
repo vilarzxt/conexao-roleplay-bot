@@ -10,7 +10,7 @@ from discord.ui import (
 
 # =========================
 # 🎫 TICKET CATEGORY SELECT
-# V1.3.2.5
+# V1.3.2.7
 # =========================
 
 class TicketCategorySelect(Select):
@@ -114,15 +114,13 @@ class TicketCategorySelect(Select):
             color=discord.Color.blurple()
         )
 
-        await interaction.response.send_message(
+        await interaction.response.edit_message(
 
             embed=embed,
 
             view=TicketSubCategoryView(
                 category
-            ),
-
-            ephemeral=True
+            )
         )
 
 # =========================
@@ -158,10 +156,6 @@ class CloseTicketButton(Button):
             custom_id="close_ticket_button"
         )
 
-    # =========================
-    # ⚡ CALLBACK
-    # =========================
-
     async def callback(
         self,
         interaction: discord.Interaction
@@ -169,11 +163,7 @@ class CloseTicketButton(Button):
 
         await interaction.response.send_message(
 
-            (
-                "⚠️ O sistema de fechamento "
-                "ainda será conectado "
-                "ao ticket_manager."
-            ),
+            "⚠️ Sistema de fechamento em desenvolvimento.",
 
             ephemeral=True
         )
@@ -233,9 +223,7 @@ class TicketManagementSelect(Select):
 
         super().__init__(
 
-            placeholder=(
-                "Gerenciamento do ticket..."
-            ),
+            placeholder="Gerenciamento do ticket...",
 
             min_values=1,
             max_values=1,
@@ -244,10 +232,6 @@ class TicketManagementSelect(Select):
 
             custom_id="ticket_management_select"
         )
-
-    # =========================
-    # ⚡ CALLBACK
-    # =========================
 
     async def callback(
         self,
@@ -258,13 +242,7 @@ class TicketManagementSelect(Select):
 
         await interaction.response.send_message(
 
-            (
-                f"⚙️ Ação selecionada:\n"
-                f"`{action}`\n\n"
-
-                "⚠️ O gerenciamento ainda "
-                "será conectado aos systems."
-            ),
+            f"⚙️ Ação selecionada:\n`{action}`",
 
             ephemeral=True
         )
@@ -285,173 +263,4 @@ class TicketManagementView(View):
 
         self.add_item(
             CloseTicketButton()
-        )
-
-# =========================
-# ⭐ RATING SELECT
-# =========================
-
-class TicketRatingSelect(Select):
-
-    def __init__(self):
-
-        options = [
-
-            discord.SelectOption(
-                label="⭐ 1 Estrela",
-                value="1"
-            ),
-
-            discord.SelectOption(
-                label="⭐⭐ 2 Estrelas",
-                value="2"
-            ),
-
-            discord.SelectOption(
-                label="⭐⭐⭐ 3 Estrelas",
-                value="3"
-            ),
-
-            discord.SelectOption(
-                label="⭐⭐⭐⭐ 4 Estrelas",
-                value="4"
-            ),
-
-            discord.SelectOption(
-                label="⭐⭐⭐⭐⭐ 5 Estrelas",
-                value="5"
-            )
-        ]
-
-        super().__init__(
-
-            placeholder=(
-                "Avalie o atendimento..."
-            ),
-
-            min_values=1,
-            max_values=1,
-
-            options=options,
-
-            custom_id="ticket_rating_select"
-        )
-
-    async def callback(
-        self,
-        interaction: discord.Interaction
-    ):
-
-        rating = self.values[0]
-
-        await interaction.response.send_message(
-
-            (
-                f"⭐ Avaliação registrada:\n"
-                f"`{rating} estrela(s)`"
-            ),
-
-            ephemeral=True
-        )
-
-# =========================
-# ⭐ RATING VIEW
-# =========================
-
-class TicketRatingView(View):
-
-    def __init__(self):
-
-        super().__init__(timeout=None)
-
-        self.add_item(
-            TicketRatingSelect()
-        )
-
-# =========================
-# 📝 FEEDBACK MODAL
-# =========================
-
-class TicketFeedbackModal(Modal):
-
-    def __init__(self):
-
-        super().__init__(
-            title="Feedback do Atendimento"
-        )
-
-        self.feedback = TextInput(
-
-            label="Comentário (Opcional)",
-
-            placeholder=(
-                "Descreva sua experiência "
-                "com o atendimento..."
-            ),
-
-            required=False,
-
-            style=discord.TextStyle.paragraph,
-
-            max_length=1000
-        )
-
-        self.add_item(
-            self.feedback
-        )
-
-    async def on_submit(
-        self,
-        interaction: discord.Interaction
-    ):
-
-        await interaction.response.send_message(
-
-            "✅ Feedback enviado com sucesso.",
-
-            ephemeral=True
-        )
-
-# =========================
-# 📝 CLOSE REASON MODAL
-# =========================
-
-class CloseReasonModal(Modal):
-
-    def __init__(self):
-
-        super().__init__(
-            title="Motivo do Fechamento"
-        )
-
-        self.reason = TextInput(
-
-            label="Motivo",
-
-            placeholder=(
-                "Informe detalhadamente "
-                "o motivo do fechamento..."
-            ),
-
-            required=True,
-
-            style=discord.TextStyle.paragraph,
-
-            max_length=1000
-        )
-
-        self.add_item(
-            self.reason
-        )
-
-    async def on_submit(
-        self,
-        interaction: discord.Interaction
-    ):
-
-        await interaction.response.send_message(
-
-            "🔒 Motivo registrado.",
-
-            ephemeral=True
         )

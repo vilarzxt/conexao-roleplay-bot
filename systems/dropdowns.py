@@ -7,7 +7,7 @@ from discord.ui import (
 
 # =========================
 # 🎫 SUBCATEGORY SELECT
-# V1.3.2.6
+# V1.3.2.7
 # =========================
 
 class TicketSubCategorySelect(Select):
@@ -159,28 +159,19 @@ class TicketSubCategorySelect(Select):
         interaction: discord.Interaction
     ):
 
-        subcategory = self.values[0]
-
-        embed = discord.Embed(
-
-            title="🎫 Ticket Criado",
-
-            description=(
-                f"Subcategoria selecionada:\n"
-                f"`{subcategory}`\n\n"
-
-                "✅ O ticket será processado "
-                "automaticamente pelo sistema."
-            ),
-
-            color=discord.Color.green()
+        from systems.ticket_manager import (
+            create_ticket
         )
 
-        await interaction.response.send_message(
+        subcategory = self.values[0]
 
-            embed=embed,
+        await create_ticket(
 
-            ephemeral=True
+            interaction=interaction,
+
+            category=self.category,
+
+            subcategory=subcategory
         )
 
 # =========================
