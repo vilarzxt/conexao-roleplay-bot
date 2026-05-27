@@ -10,7 +10,7 @@ from discord.ui import (
 
 # =========================
 # 🎫 TICKET CATEGORY SELECT
-# V1.3.2
+# V1.3.2.5
 # =========================
 
 class TicketCategorySelect(Select):
@@ -94,17 +94,32 @@ class TicketCategorySelect(Select):
         interaction: discord.Interaction
     ):
 
+        from systems.dropdowns import (
+            TicketSubCategoryView
+        )
+
         category = self.values[0]
+
+        embed = discord.Embed(
+
+            title="📂 Categoria Selecionada",
+
+            description=(
+                f"Categoria: `{category}`\n\n"
+
+                "Selecione abaixo a "
+                "subcategoria do atendimento."
+            ),
+
+            color=discord.Color.blurple()
+        )
 
         await interaction.response.send_message(
 
-            (
-                f"📂 Categoria selecionada:\n"
-                f"`{category}`\n\n"
+            embed=embed,
 
-                "⚠️ O sistema de subcategorias "
-                "será carregado pelo "
-                "dropdowns.py"
+            view=TicketSubCategoryView(
+                category
             ),
 
             ephemeral=True
@@ -322,10 +337,6 @@ class TicketRatingSelect(Select):
             custom_id="ticket_rating_select"
         )
 
-    # =========================
-    # ⚡ CALLBACK
-    # =========================
-
     async def callback(
         self,
         interaction: discord.Interaction
@@ -337,11 +348,7 @@ class TicketRatingSelect(Select):
 
             (
                 f"⭐ Avaliação registrada:\n"
-                f"`{rating} estrela(s)`\n\n"
-
-                "⚠️ O sistema de feedback "
-                "ainda será conectado "
-                "ao storage."
+                f"`{rating} estrela(s)`"
             ),
 
             ephemeral=True
@@ -393,10 +400,6 @@ class TicketFeedbackModal(Modal):
             self.feedback
         )
 
-    # =========================
-    # ⚡ SUBMIT
-    # =========================
-
     async def on_submit(
         self,
         interaction: discord.Interaction
@@ -404,10 +407,7 @@ class TicketFeedbackModal(Modal):
 
         await interaction.response.send_message(
 
-            (
-                "✅ Feedback enviado "
-                "com sucesso."
-            ),
+            "✅ Feedback enviado com sucesso.",
 
             ephemeral=True
         )
@@ -444,10 +444,6 @@ class CloseReasonModal(Modal):
             self.reason
         )
 
-    # =========================
-    # ⚡ SUBMIT
-    # =========================
-
     async def on_submit(
         self,
         interaction: discord.Interaction
@@ -455,13 +451,7 @@ class CloseReasonModal(Modal):
 
         await interaction.response.send_message(
 
-            (
-                "🔒 Motivo registrado.\n\n"
-
-                "⚠️ O fechamento ainda "
-                "será conectado ao "
-                "ticket_manager."
-            ),
+            "🔒 Motivo registrado.",
 
             ephemeral=True
         )
