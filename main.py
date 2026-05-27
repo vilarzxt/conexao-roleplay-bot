@@ -5,6 +5,7 @@ import asyncio
 
 from config.settings import PREFIX, GUILD_ID
 
+
 # =========================
 # 🤖 INTENTS
 # =========================
@@ -15,126 +16,126 @@ intents.message_content = True
 
 
 # =========================
-# 🤖 BOT CORE
+# 🤖 BOT CORE (PRODUCTION FIX)
 # =========================
 
-bot = commands.Bot(
-    command_prefix=PREFIX,
-    intents=intents,
-    help_command=None
-)
+class BotClient(commands.Bot):
+
+    def __init__(self):
+
+        super().__init__(
+            command_prefix=PREFIX,
+            intents=intents,
+            help_command=None
+        )
+
+        self.auto_close_manager = None
 
 
-# =========================
-# 📦 COMMAND LOADER
-# =========================
+    # =========================
+    # 📦 COMMAND LOADER
+    # =========================
 
-COMMAND_FILES = [
-    "commands.ping",
-    "commands.info",
-    "commands.status",
-    "commands.ticket",
-    "commands.embed",
-    "commands.anuncio",
-    "commands.regras",
-    "commands.servidor",
-    "commands.warn",
-    "commands.kick",
-    "commands.ban",
-    "commands.lock",
-    "commands.unlock"
-]
+    COMMAND_FILES = [
+        "commands.ping",
+        "commands.info",
+        "commands.status",
+        "commands.ticket",
+        "commands.embed",
+        "commands.anuncio",
+        "commands.regras",
+        "commands.servidor",
+        "commands.warn",
+        "commands.kick",
+        "commands.ban",
+        "commands.lock",
+        "commands.unlock"
+    ]
 
 
-# =========================
-# 🚀 SETUP HOOK
-# =========================
+    # =========================
+    # 🚀 SETUP HOOK (CORRIGIDO)
+    # =========================
 
-async def setup_hook():
+    async def setup_hook(self):
 
-    for command in COMMAND_FILES:
+        print("🔁 CARREGANDO COMANDOS...")
+
+        for command in self.COMMAND_FILES:
+
+            try:
+
+                module = __import__(command, fromlist=["setup"])
+
+                if hasattr(module, "setup"):
+                    await module.setup(self)
+
+                print(f"[OK] {command}")
+
+            except Exception as e:
+
+                print(f"[ERRO] {command}")
+                print(e)
+
+
+    # =========================
+    # 🔁 READY EVENT
+    # =========================
+
+    async def on_ready(self):
+
+        print("========================")
+        print("🤖 BOT ONLINE")
+        print(self.user)
+        print("========================")
 
         try:
 
-            module = __import__(command, fromlist=["setup"])
+            guild = discord.Object(id=GUILD_ID)
 
-            if hasattr(module, "setup"):
-                await module.setup(bot)
+            # sync global
+            global_sync = await self.tree.sync()
 
-            print(f"[OK] {command}")
+            # sync guild (rápido update)
+            guild_sync = await self.tree.sync(guild=guild)
+
+            print(f"🌍 GLOBAL SYNC: {len(global_sync)}")
+            print(f"🏠 GUILD SYNC: {len(guild_sync)}")
 
         except Exception as e:
-
-            print(f"[ERRO] {command}")
+            print("❌ SYNC ERROR:")
             print(e)
 
+        # =========================
+        # 🔥 SYSTEMS INIT
+        # =========================
 
-# =========================
-# ⚙️ AUTO-CLOSE + EVENTS INIT
-# =========================
+        from systems.auto_close import setup_auto_close
+        from systems.events.ticket_events import init_events
 
-auto_close_manager = None
+        self.auto_close_manager = setup_auto_close(self)
+        init_events(self, self.auto_close_manager)
 
+        print("⚙️ SYSTEMS LOADED")
 
-# =========================
-# 🔁 READY EVENT
-# =========================
-
-@bot.event
-async def on_ready():
-
-    global auto_close_manager
-
-    print("========================")
-    print("BOT ONLINE")
-    print(bot.user)
-
-    try:
-
-        guild = discord.Object(id=GUILD_ID)
-
-        guild_sync = await bot.tree.sync(guild=guild)
-        global_sync = await bot.tree.sync()
-
-        print(f"GUILD SYNC: {len(guild_sync)}")
-        print(f"GLOBAL SYNC: {len(global_sync)}")
-
-    except Exception as e:
-        print("SYNC ERROR:")
-        print(e)
 
     # =========================
-    # 🔥 INIT SYSTEMS (IMPORTAÇÕES TARDIAS)
+    # 📩 MESSAGE EVENT
     # =========================
 
-    from systems.auto_close import setup_auto_close
-    from systems.events.ticket_events import init_events
+    async def on_message(self, message):
 
-    auto_close_manager = setup_auto_close(bot)
-    init_events(bot, auto_close_manager)
+        await self.process_commands(message)
 
-    print("SYSTEMS LOADED")
+        if message.author.bot:
+            return
 
+        if not message.guild:
+            return
 
-# =========================
-# 📩 MESSAGE EVENT (AUTO-CLOSE HOOK)
-# =========================
+        from systems.events.ticket_events import handle_message
 
-@bot.event
-async def on_message(message):
-
-    await bot.process_commands(message)
-
-    if message.author.bot:
-        return
-
-    if not message.guild:
-        return
-
-    # lazy import (evita circular dependency)
-    from systems.events.ticket_events import handle_message
-
-    await handle_message(message)
+        await handle_message(message)
 
 
 # =========================
@@ -143,9 +144,7 @@ async def on_message(message):
 
 async def main():
 
-    async with bot:
-
-        bot.setup_hook = setup_hook
+    async with BotClient() as bot:
 
         await bot.start(os.getenv("TOKEN"))
 
