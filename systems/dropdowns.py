@@ -7,7 +7,7 @@ from discord.ui import (
 
 # =========================
 # 🎫 SUBCATEGORY SELECT
-# V1.3.2
+# V1.3.2.6
 # =========================
 
 class TicketSubCategorySelect(Select):
@@ -45,10 +45,6 @@ class TicketSubCategorySelect(Select):
 
     def get_options(self):
 
-        # =========================
-        # 🚨 DENÚNCIAS
-        # =========================
-
         if self.category == "denuncias":
 
             return [
@@ -72,10 +68,6 @@ class TicketSubCategorySelect(Select):
                 )
             ]
 
-        # =========================
-        # ❓ DÚVIDAS
-        # =========================
-
         if self.category == "duvidas":
 
             return [
@@ -93,10 +85,6 @@ class TicketSubCategorySelect(Select):
                 )
             ]
 
-        # =========================
-        # 💰 FINANCEIRO
-        # =========================
-
         if self.category == "financeiro":
 
             return [
@@ -113,10 +101,6 @@ class TicketSubCategorySelect(Select):
                     value="problemas_financeiros"
                 )
             ]
-
-        # =========================
-        # 🏢 ORGANIZAÇÕES
-        # =========================
 
         if self.category == "organizacoes":
 
@@ -140,10 +124,6 @@ class TicketSubCategorySelect(Select):
                     value="duvidas_org"
                 )
             ]
-
-        # =========================
-        # 🤝 PARCERIAS
-        # =========================
 
         if self.category == "parcerias":
 
@@ -181,20 +161,24 @@ class TicketSubCategorySelect(Select):
 
         subcategory = self.values[0]
 
-        # =========================
-        # 🚧 PLACEHOLDER
-        # =========================
+        embed = discord.Embed(
+
+            title="🎫 Ticket Criado",
+
+            description=(
+                f"Subcategoria selecionada:\n"
+                f"`{subcategory}`\n\n"
+
+                "✅ O ticket será processado "
+                "automaticamente pelo sistema."
+            ),
+
+            color=discord.Color.green()
+        )
 
         await interaction.response.send_message(
 
-            (
-                f"📂 Subcategoria selecionada:\n"
-                f"`{subcategory}`\n\n"
-
-                "⚠️ O ticket ainda será "
-                "criado pelo "
-                "ticket_manager.py"
-            ),
+            embed=embed,
 
             ephemeral=True
         )
