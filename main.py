@@ -16,7 +16,8 @@ intents.message_content = True
 
 
 # =========================
-# 🤖 BOT CORE (PRODUCTION FIX)
+# 🤖 BOT CORE
+# V1.3.2.8
 # =========================
 
 class BotClient(commands.Bot):
@@ -24,19 +25,22 @@ class BotClient(commands.Bot):
     def __init__(self):
 
         super().__init__(
+
             command_prefix=PREFIX,
+
             intents=intents,
+
             help_command=None
         )
 
         self.auto_close_manager = None
-
 
     # =========================
     # 📦 COMMAND LOADER
     # =========================
 
     COMMAND_FILES = [
+
         "commands.ping",
         "commands.info",
         "commands.status",
@@ -52,9 +56,8 @@ class BotClient(commands.Bot):
         "commands.unlock"
     ]
 
-
     # =========================
-    # 🚀 SETUP HOOK (CORRIGIDO)
+    # 🚀 SETUP HOOK
     # =========================
 
     async def setup_hook(self):
@@ -65,9 +68,13 @@ class BotClient(commands.Bot):
 
             try:
 
-                module = __import__(command, fromlist=["setup"])
+                module = __import__(
+                    command,
+                    fromlist=["setup"]
+                )
 
                 if hasattr(module, "setup"):
+
                     await module.setup(self)
 
                 print(f"[OK] {command}")
@@ -76,7 +83,6 @@ class BotClient(commands.Bot):
 
                 print(f"[ERRO] {command}")
                 print(e)
-
 
     # =========================
     # 🔁 READY EVENT
@@ -91,18 +97,36 @@ class BotClient(commands.Bot):
 
         try:
 
-            guild = discord.Object(id=GUILD_ID)
+            guild = discord.Object(
+                id=GUILD_ID
+            )
 
-            # sync global
+            # =========================
+            # 🌍 GLOBAL SYNC
+            # =========================
+
             global_sync = await self.tree.sync()
 
-            # sync guild (rápido update)
-            guild_sync = await self.tree.sync(guild=guild)
+            # =========================
+            # 🏠 GUILD SYNC
+            # =========================
 
-            print(f"🌍 GLOBAL SYNC: {len(global_sync)}")
-            print(f"🏠 GUILD SYNC: {len(guild_sync)}")
+            guild_sync = await self.tree.sync(
+                guild=guild
+            )
+
+            print(
+                f"🌍 GLOBAL SYNC: "
+                f"{len(global_sync)}"
+            )
+
+            print(
+                f"🏠 GUILD SYNC: "
+                f"{len(guild_sync)}"
+            )
 
         except Exception as e:
+
             print("❌ SYNC ERROR:")
             print(e)
 
@@ -110,14 +134,42 @@ class BotClient(commands.Bot):
         # 🔥 SYSTEMS INIT
         # =========================
 
-        from systems.auto_close import setup_auto_close
-        from systems.events.ticket_events import init_events
+        from systems.auto_close import (
+            setup_auto_close
+        )
 
-        self.auto_close_manager = setup_auto_close(self)
-        init_events(self, self.auto_close_manager)
+        from systems.ticket_manager import (
+            setup_ticket_manager
+        )
+
+        from systems.events.ticket_events import (
+            init_events
+        )
+
+        # =========================
+        # ⚙️ AUTO CLOSE
+        # =========================
+
+        self.auto_close_manager = (
+            setup_auto_close(self)
+        )
+
+        # =========================
+        # 🎫 TICKET MANAGER
+        # =========================
+
+        setup_ticket_manager(self)
+
+        # =========================
+        # 📩 EVENTS
+        # =========================
+
+        init_events(
+            self,
+            self.auto_close_manager
+        )
 
         print("⚙️ SYSTEMS LOADED")
-
 
     # =========================
     # 📩 MESSAGE EVENT
@@ -125,7 +177,9 @@ class BotClient(commands.Bot):
 
     async def on_message(self, message):
 
-        await self.process_commands(message)
+        await self.process_commands(
+            message
+        )
 
         if message.author.bot:
             return
@@ -133,10 +187,11 @@ class BotClient(commands.Bot):
         if not message.guild:
             return
 
-        from systems.events.ticket_events import handle_message
+        from systems.events.ticket_events import (
+            handle_message
+        )
 
         await handle_message(message)
-
 
 # =========================
 # 🚀 STARTUP
@@ -146,8 +201,9 @@ async def main():
 
     async with BotClient() as bot:
 
-        await bot.start(os.getenv("TOKEN"))
-
+        await bot.start(
+            os.getenv("TOKEN")
+        )
 
 # =========================
 # ▶️ RUNTIME

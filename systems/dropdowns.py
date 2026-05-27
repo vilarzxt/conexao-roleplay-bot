@@ -5,9 +5,13 @@ from discord.ui import (
     Select
 )
 
+from systems.views import (
+    TicketPanelView
+)
+
 # =========================
 # 🎫 SUBCATEGORY SELECT
-# V1.3.2.7
+# V1.3.2.8
 # =========================
 
 class TicketSubCategorySelect(Select):
@@ -45,6 +49,10 @@ class TicketSubCategorySelect(Select):
 
     def get_options(self):
 
+        # =========================
+        # 🚨 DENÚNCIAS
+        # =========================
+
         if self.category == "denuncias":
 
             return [
@@ -68,6 +76,10 @@ class TicketSubCategorySelect(Select):
                 )
             ]
 
+        # =========================
+        # ❓ DÚVIDAS
+        # =========================
+
         if self.category == "duvidas":
 
             return [
@@ -85,6 +97,10 @@ class TicketSubCategorySelect(Select):
                 )
             ]
 
+        # =========================
+        # 💰 FINANCEIRO
+        # =========================
+
         if self.category == "financeiro":
 
             return [
@@ -101,6 +117,10 @@ class TicketSubCategorySelect(Select):
                     value="problemas_financeiros"
                 )
             ]
+
+        # =========================
+        # 🏢 ORGANIZAÇÕES
+        # =========================
 
         if self.category == "organizacoes":
 
@@ -124,6 +144,10 @@ class TicketSubCategorySelect(Select):
                     value="duvidas_org"
                 )
             ]
+
+        # =========================
+        # 🤝 PARCERIAS
+        # =========================
 
         if self.category == "parcerias":
 
@@ -165,7 +189,11 @@ class TicketSubCategorySelect(Select):
 
         subcategory = self.values[0]
 
-        await create_ticket(
+        # =========================
+        # 🎫 CREATE TICKET
+        # =========================
+
+        ticket_channel = await create_ticket(
 
             interaction=interaction,
 
@@ -173,6 +201,47 @@ class TicketSubCategorySelect(Select):
 
             subcategory=subcategory
         )
+
+        # =========================
+        # 🔄 RESET PANEL
+        # =========================
+
+        try:
+
+            await interaction.message.edit(
+                view=TicketPanelView()
+            )
+
+        except:
+            pass
+
+        # =========================
+        # 📩 REDIRECT MESSAGE
+        # =========================
+
+        if ticket_channel:
+
+            await interaction.followup.send(
+
+                (
+                    "✅ Ticket criado com sucesso.\n\n"
+                    f"📂 Canal: {ticket_channel.mention}"
+                ),
+
+                ephemeral=True
+            )
+
+        else:
+
+            await interaction.followup.send(
+
+                (
+                    "❌ O sistema não conseguiu "
+                    "criar o ticket."
+                ),
+
+                ephemeral=True
+            )
 
 # =========================
 # 🎫 SUBCATEGORY VIEW
