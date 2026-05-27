@@ -1,75 +1,133 @@
 import discord
-from systems.dropdowns import TicketSubCategoryView
 
-class TicketCategorySelect(discord.ui.Select):
+from discord.ext import commands
+from discord import app_commands
 
-    def __init__(self):
+from config.assets import (
+    ASSETS,
+    EMBED_COLOR,
+    TICKET_FOOTER
+)
 
-        options = [
+from config.settings import (
+    VERSION_NAME,
+    TICKET_SYSTEM_ENABLED
+)
 
-            discord.SelectOption(
-                label="Central de Denúncias",
-                description="Denúncias contra players, staff ou organizações.",
-                emoji="🚨",
-                value="denuncias"
-            ),
+from systems.utils import create_embed
+from systems.views import TicketPanelView
 
-            discord.SelectOption(
-                label="Dúvidas e Reportes",
-                description="Dúvidas gerais, bugs e suporte técnico.",
-                emoji="❓",
-                value="duvidas"
-            ),
 
-            discord.SelectOption(
-                label="Central Financeira",
-                description="VIP, coins e problemas financeiros.",
-                emoji="💰",
-                value="financeiro"
-            ),
+# =========================
+# 🎫 TICKET COMMAND
+# CONEXÃO ROLEPLAY
+# V1.3.2.4
+# =========================
 
-            discord.SelectOption(
-                label="Central de Organizações",
-                description="Suporte operacional de organizações.",
-                emoji="🏢",
-                value="organizacoes"
-            ),
+@app_commands.command(
+    name="ticket",
+    description="Realiza o deploy do painel de tickets"
+)
+async def ticket(
+    interaction: discord.Interaction
+):
 
-            discord.SelectOption(
-                label="Central de Parceiros",
-                description="Parcerias, criadores e projetos.",
-                emoji="🤝",
-                value="parcerias"
-            )
-        ]
+    # =========================
+    # 🔒 SYSTEM CHECK
+    # =========================
 
-        super().__init__(
-            placeholder="Selecione a categoria do atendimento...",
-            min_values=1,
-            max_values=1,
-            options=options,
-            custom_id="ticket_category_select"
-        )
-
-    async def callback(self, interaction: discord.Interaction):
-
-        category = self.values[0]
-
-        # =========================
-        # 🚀 ABRE SUBCATEGORIA REAL
-        # =========================
-
-        embed = discord.Embed(
-            title="📂 Categoria Selecionada",
-            description=(
-                f"Categoria: `{category}`\n\n"
-                "Selecione a subcategoria abaixo para continuar o atendimento."
-            ),
-            color=discord.Color.blurple()
-        )
+    if not TICKET_SYSTEM_ENABLED:
 
         await interaction.response.send_message(
-            embed=embed,
-            view=TicketSubCategoryView(category),
+            "❌ O sistema de tickets está desativado.",
             ephemeral=True
         )
+
+        return
+
+    # =========================
+    # 🧠 PANEL EMBED
+    # =========================
+
+    embed = create_embed(
+        title="🎫 Central Oficial de Atendimento",
+
+        description=(
+            "Bem-vindo à Central de Atendimento "
+            "da Conexão Roleplay.\n\n"
+
+            "Selecione abaixo a categoria "
+            "do atendimento para abrir "
+            "um ticket automaticamente."
+        ),
+
+        color=EMBED_COLOR
+    )
+
+    # =========================
+    # 📂 CATEGORIES
+    # =========================
+
+    embed.add_field(
+        name="📂 Categorias Disponíveis",
+
+        value=(
+            "🚨 Central de Denúncias\n"
+            "❓ Dúvidas e Reportes\n"
+            "💰 Central Financeira\n"
+            "🏢 Central de Organizações\n"
+            "🤝 Central de Parceiros"
+        ),
+
+        inline=False
+    )
+
+    # =========================
+    # 📌 INFO
+    # =========================
+
+    embed.add_field(
+        name="📌 Informações",
+
+        value=(
+            "• Evite abrir múltiplos tickets.\n"
+            "• Aguarde o atendimento da equipe.\n"
+            "• Envie provas quando necessário."
+        ),
+
+        inline=False
+    )
+
+    # =========================
+    # 🖼️ IMAGE
+    # =========================
+
+    embed.set_image(
+        url=ASSETS["banner_ticket"]
+    )
+
+    # =========================
+    # 🏷️ FOOTER
+    # =========================
+
+    embed.set_footer(
+        text=f"{TICKET_FOOTER} • {VERSION_NAME}"
+    )
+
+    # =========================
+    # 🚀 SEND PANEL
+    # =========================
+
+    await interaction.response.send_message(
+        embed=embed,
+        view=TicketPanelView()
+    )
+
+
+# =========================
+# 🚀 SETUP
+# =========================
+
+async def setup(bot: commands.Bot):
+
+    bot.tree.add_command(ticket)
