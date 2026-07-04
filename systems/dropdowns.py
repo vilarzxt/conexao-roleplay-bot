@@ -5,13 +5,9 @@ from discord.ui import (
     Select
 )
 
-from systems.views import (
-    TicketPanelView
-)
-
 # =========================
 # 🎫 SUBCATEGORY SELECT
-# V1.3.2.8
+# V1.3.2.9
 # =========================
 
 class TicketSubCategorySelect(Select):
@@ -189,6 +185,10 @@ class TicketSubCategorySelect(Select):
 
         subcategory = self.values[0]
 
+        await interaction.response.defer(
+            ephemeral=True
+        )
+
         # =========================
         # 🎫 CREATE TICKET
         # =========================
@@ -201,19 +201,6 @@ class TicketSubCategorySelect(Select):
 
             subcategory=subcategory
         )
-
-        # =========================
-        # 🔄 RESET PANEL
-        # =========================
-
-        try:
-
-            await interaction.message.edit(
-                view=TicketPanelView()
-            )
-
-        except:
-            pass
 
         # =========================
         # 📩 REDIRECT MESSAGE

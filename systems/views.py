@@ -10,7 +10,7 @@ from discord.ui import (
 
 # =========================
 # 🎫 TICKET CATEGORY SELECT
-# V1.3.2.7
+# V1.3.2.9
 # =========================
 
 class TicketCategorySelect(Select):
@@ -114,13 +114,15 @@ class TicketCategorySelect(Select):
             color=discord.Color.blurple()
         )
 
-        await interaction.response.edit_message(
+        await interaction.response.send_message(
 
             embed=embed,
 
             view=TicketSubCategoryView(
                 category
-            )
+            ),
+
+            ephemeral=True
         )
 
 # =========================

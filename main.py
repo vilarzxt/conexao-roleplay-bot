@@ -5,6 +5,11 @@ import asyncio
 
 from config.settings import PREFIX, GUILD_ID
 
+from systems.views import (
+    TicketPanelView,
+    TicketManagementView
+)
+
 
 # =========================
 # 🤖 INTENTS
@@ -17,7 +22,7 @@ intents.message_content = True
 
 # =========================
 # 🤖 BOT CORE
-# V1.3.2.8
+# V1.3.2.9
 # =========================
 
 class BotClient(commands.Bot):
@@ -94,6 +99,15 @@ class BotClient(commands.Bot):
         print("🤖 BOT ONLINE")
         print(self.user)
         print("========================")
+
+        # =========================
+        # 🎫 PERSISTENT VIEWS
+        # =========================
+
+        self.add_view(TicketPanelView())
+        self.add_view(TicketManagementView())
+
+        print("🎫 PERSISTENT VIEWS LOADED")
 
         try:
 
