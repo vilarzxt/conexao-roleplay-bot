@@ -7,7 +7,7 @@ from discord.ui import (
 
 # =========================
 # 🎫 SUBCATEGORY SELECT
-# V1.3.2.10
+# V1.3.2.11
 # =========================
 
 class TicketSubCategorySelect(Select):
@@ -179,23 +179,23 @@ class TicketSubCategorySelect(Select):
         interaction: discord.Interaction
     ):
 
-        from systems.ticket_manager import (
-            create_ticket
-        )
-
         import traceback
 
-        subcategory = self.values[0]
-
-        await interaction.response.defer(
-            ephemeral=True
-        )
-
-        # =========================
-        # 🎫 CREATE TICKET
-        # =========================
-
         try:
+
+            from systems.ticket_manager import (
+                create_ticket
+            )
+
+            subcategory = self.values[0]
+
+            await interaction.response.defer(
+                ephemeral=True
+            )
+
+            # =========================
+            # 🎫 CREATE TICKET
+            # =========================
 
             ticket_channel = await create_ticket(
 
@@ -206,46 +206,58 @@ class TicketSubCategorySelect(Select):
                 subcategory=subcategory
             )
 
+            # =========================
+            # 📩 REDIRECT MESSAGE
+            # =========================
+
+            if ticket_channel:
+
+                await interaction.followup.send(
+
+                    (
+                        "✅ Ticket criado com sucesso.\n\n"
+                        f"📂 Canal: {ticket_channel.mention}"
+                    ),
+
+                    ephemeral=True
+                )
+
+            else:
+
+                await interaction.followup.send(
+
+                    (
+                        "❌ O sistema não conseguiu "
+                        "criar o ticket."
+                    ),
+
+                    ephemeral=True
+                )
+
         except Exception as e:
 
-            print("❌ ERRO AO CRIAR TICKET:", flush=True)
+            print("❌ ERRO NO CALLBACK DE SUBCATEGORIA:", flush=True)
 
             traceback.print_exc()
 
-            return await interaction.followup.send(
+            try:
 
-                f"❌ Erro ao criar o ticket:\n```{e}```",
+                if interaction.response.is_done():
 
-                ephemeral=True
-            )
+                    await interaction.followup.send(
+                        f"❌ Erro: {e}",
+                        ephemeral=True
+                    )
 
-        # =========================
-        # 📩 REDIRECT MESSAGE
-        # =========================
+                else:
 
-        if ticket_channel:
+                    await interaction.response.send_message(
+                        f"❌ Erro: {e}",
+                        ephemeral=True
+                    )
 
-            await interaction.followup.send(
-
-                (
-                    "✅ Ticket criado com sucesso.\n\n"
-                    f"📂 Canal: {ticket_channel.mention}"
-                ),
-
-                ephemeral=True
-            )
-
-        else:
-
-            await interaction.followup.send(
-
-                (
-                    "❌ O sistema não conseguiu "
-                    "criar o ticket."
-                ),
-
-                ephemeral=True
-            )
+            except:
+                pass
 
 # =========================
 # 🎫 SUBCATEGORY VIEW
@@ -265,3 +277,39 @@ class TicketSubCategoryView(View):
                 category
             )
         )
+
+    # =========================
+    # ⚠️ ERROR HANDLER
+    # =========================
+
+    async def on_error(
+        self,
+        interaction: discord.Interaction,
+        error: Exception,
+        item
+    ):
+
+        import traceback
+
+        print("❌ ERRO NA VIEW DE SUBCATEGORIA:", flush=True)
+
+        traceback.print_exc()
+
+        try:
+
+            if interaction.response.is_done():
+
+                await interaction.followup.send(
+                    f"❌ Erro: {error}",
+                    ephemeral=True
+                )
+
+            else:
+
+                await interaction.response.send_message(
+                    f"❌ Erro: {error}",
+                    ephemeral=True
+                )
+
+        except:
+            pass
