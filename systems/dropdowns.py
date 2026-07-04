@@ -7,7 +7,7 @@ from discord.ui import (
 
 # =========================
 # 🎫 SUBCATEGORY SELECT
-# V1.3.2.9
+# V1.3.2.10
 # =========================
 
 class TicketSubCategorySelect(Select):
@@ -183,6 +183,8 @@ class TicketSubCategorySelect(Select):
             create_ticket
         )
 
+        import traceback
+
         subcategory = self.values[0]
 
         await interaction.response.defer(
@@ -193,14 +195,29 @@ class TicketSubCategorySelect(Select):
         # 🎫 CREATE TICKET
         # =========================
 
-        ticket_channel = await create_ticket(
+        try:
 
-            interaction=interaction,
+            ticket_channel = await create_ticket(
 
-            category=self.category,
+                interaction=interaction,
 
-            subcategory=subcategory
-        )
+                category=self.category,
+
+                subcategory=subcategory
+            )
+
+        except Exception as e:
+
+            print("❌ ERRO AO CRIAR TICKET:", flush=True)
+
+            traceback.print_exc()
+
+            return await interaction.followup.send(
+
+                f"❌ Erro ao criar o ticket:\n```{e}```",
+
+                ephemeral=True
+            )
 
         # =========================
         # 📩 REDIRECT MESSAGE
