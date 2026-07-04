@@ -1,6 +1,6 @@
 # =========================
 # 🎫 TICKET MANAGER ENGINE
-# V1.3.2.8
+# V1.3.2.11
 # =========================
 
 import discord
@@ -8,7 +8,6 @@ import datetime
 
 from systems.permissions import can_close_ticket
 from systems.transcripts import TranscriptBuilder
-from systems.router import TicketRouter
 
 from systems.views import (
     TicketManagementView
@@ -23,7 +22,6 @@ class TicketManager:
     def __init__(self, bot):
 
         self.bot = bot
-        self.router = TicketRouter(bot)
         self.transcripts = TranscriptBuilder()
 
     # =========================
