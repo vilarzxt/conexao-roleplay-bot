@@ -1,6 +1,6 @@
 # =========================
 # 🎫 TICKET MANAGER ENGINE
-# V1.3.2.11
+# V1.3.2.12
 # =========================
 
 import discord
@@ -108,6 +108,10 @@ class TicketManager:
         # =========================
         # 🎫 CREATE CHANNEL
         # =========================
+        # 📌 TÓPICO: ID do dono vem PRIMEIRO,
+        # separado por " | ", pra permitir
+        # parsing seguro em get_ticket_owner_id()
+        # =========================
 
         ticket_channel = await guild.create_text_channel(
 
@@ -118,7 +122,7 @@ class TicketManager:
             overwrites=overwrites,
 
             topic=(
-                f"Ticket de {user} | "
+                f"{user.id} | "
                 f"{category} | "
                 f"{subcategory}"
             )
@@ -186,15 +190,51 @@ class TicketManager:
         return ticket_channel
 
     # =========================
+    # 📁 CHANGE CATEGORY
+    # =========================
+
+    async def change_category(
+
+        self,
+        channel: discord.TextChannel,
+        new_category: str
+
+    ):
+
+        if not channel.topic:
+            return False
+
+        try:
+
+            parts = channel.topic.split(" | ")
+
+            owner_id = parts[0]
+
+            subcategory = parts[2] if len(parts) > 2 else "geral"
+
+        except IndexError:
+
+            return False
+
+        await channel.edit(
+
+            topic=(
+                f"{owner_id} | "
+                f"{new_category} | "
+                f"{subcategory}"
+            )
+        )
+
+        return True
+
+    # =========================
     # 🔒 CLOSE TICKET FLOW
     # =========================
 
     async def close_ticket(
         self,
         interaction: discord.Interaction,
-        reason: str = "Não informado",
-        rating: int = None,
-        feedback: str = None
+        reason: str = "Não informado"
     ):
 
         channel = interaction.channel
@@ -226,6 +266,26 @@ class TicketManager:
             )
 
         # =========================
+        # 👤 IDENTIFICA DONO DO TICKET
+        # =========================
+
+        owner = None
+
+        if channel.topic:
+
+            try:
+
+                owner_id = int(
+                    channel.topic.split(" | ")[0]
+                )
+
+                owner = guild.get_member(owner_id)
+
+            except (ValueError, IndexError):
+
+                owner = None
+
+        # =========================
         # 📌 FEEDBACK EMBED
         # =========================
 
@@ -250,55 +310,41 @@ class TicketManager:
             inline=False
         )
 
-        if rating is not None:
-
-            embed.add_field(
-                name="⭐ Avaliação",
-                value=f"{rating}/5",
-                inline=True
-            )
-
-        if feedback:
-
-            embed.add_field(
-                name="📝 Feedback",
-                value=feedback,
-                inline=False
-            )
-
         # =========================
-        # 📤 DM USER
+        # 📤 DM USER (AVALIAÇÃO)
         # =========================
 
-        try:
+        if owner:
 
-            await user.send(
+            try:
 
-                embed=discord.Embed(
+                await owner.send(
 
-                    title="📨 Seu ticket foi encerrado",
+                    embed=discord.Embed(
 
-                    description=(
+                        title="📨 Seu ticket foi encerrado",
 
-                        f"Seu atendimento em "
-                        f"`{channel.name}` "
-                        f"foi finalizado.\n\n"
+                        description=(
 
-                        f"📌 Motivo: {reason}\n"
+                            f"Seu atendimento em "
+                            f"`{channel.name}` "
+                            f"foi finalizado.\n\n"
 
-                        f"⭐ Avaliação: "
-                        f"{rating if rating else 'Não informado'}"
-                    ),
+                            f"📌 Motivo: {reason}\n\n"
 
-                    color=0x2ECC71
+                            "Agradecemos por utilizar "
+                            "nossa central de atendimento!"
+                        ),
+
+                        color=0x2ECC71
+                    )
                 )
-            )
 
-        except:
-            pass
+            except:
+                pass
 
         # =========================
-        # 📜 TRANSCRIPT
+        # 📜 TRANSCRIPT (STAFF)
         # =========================
 
         try:
@@ -307,7 +353,7 @@ class TicketManager:
 
                 channel=channel,
                 guild=guild,
-                user=user
+                user=owner if owner else user
             )
 
         except Exception as e:
@@ -338,13 +384,15 @@ class TicketManager:
         await interaction.response.send_message(
 
             "🔒 Ticket encerrado "
-            "com sucesso.",
+            "com sucesso.\n\n"
+
+            "O canal será deletado em breve.",
 
             ephemeral=True
         )
 
         await channel.delete(
-            reason="Ticket fechado via sistema"
+            reason=f"Ticket fechado: {reason}"
         )
 
 # =========================
@@ -388,4 +436,53 @@ async def create_ticket(
         category=category,
 
         subcategory=subcategory
+    )
+
+# =========================
+# 🔒 GLOBAL CLOSE FUNCTION
+# =========================
+
+async def close_ticket(
+
+    interaction: discord.Interaction,
+    reason: str = "Não informado"
+
+):
+
+    if not ticket_manager:
+
+        return await interaction.response.send_message(
+
+            "❌ Sistema de tickets indisponível.",
+
+            ephemeral=True
+        )
+
+    return await ticket_manager.close_ticket(
+
+        interaction=interaction,
+
+        reason=reason
+    )
+
+# =========================
+# 📁 GLOBAL CHANGE CATEGORY
+# =========================
+
+async def change_ticket_category(
+
+    channel: discord.TextChannel,
+    new_category: str
+
+):
+
+    if not ticket_manager:
+
+        return False
+
+    return await ticket_manager.change_category(
+
+        channel=channel,
+
+        new_category=new_category
     )

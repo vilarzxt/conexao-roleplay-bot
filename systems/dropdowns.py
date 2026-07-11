@@ -7,7 +7,7 @@ from discord.ui import (
 
 # =========================
 # 🎫 SUBCATEGORY SELECT
-# V1.3.2.11
+# V1.3.2.12
 # =========================
 
 class TicketSubCategorySelect(Select):
@@ -313,3 +313,283 @@ class TicketSubCategoryView(View):
 
         except:
             pass
+
+# =========================
+# ⏰ AUTO CLOSE SELECT
+# V1.3.2.12
+# =========================
+
+class TicketAutoCloseSelect(Select):
+
+    def __init__(self):
+
+        options = [
+
+            discord.SelectOption(
+                label="30 minutos",
+                emoji="⏰",
+                value="1800"
+            ),
+
+            discord.SelectOption(
+                label="1 hora",
+                emoji="⏰",
+                value="3600"
+            ),
+
+            discord.SelectOption(
+                label="2 horas",
+                emoji="⏰",
+                value="7200"
+            ),
+
+            discord.SelectOption(
+                label="4 horas",
+                emoji="⏰",
+                value="14400"
+            ),
+
+            discord.SelectOption(
+                label="8 horas",
+                emoji="⏰",
+                value="28800"
+            ),
+
+            discord.SelectOption(
+                label="12 horas",
+                emoji="⏰",
+                value="43200"
+            ),
+
+            discord.SelectOption(
+                label="24 horas",
+                emoji="⏰",
+                value="86400"
+            )
+        ]
+
+        super().__init__(
+
+            placeholder="Selecione o tempo de inatividade...",
+
+            min_values=1,
+            max_values=1,
+
+            options=options,
+
+            custom_id="ticket_autoclose_select"
+        )
+
+    # =========================
+    # ⚡ CALLBACK
+    # =========================
+
+    async def callback(
+        self,
+        interaction: discord.Interaction
+    ):
+
+        from systems.views import is_staff
+        from systems.actions import get_ticket_owner_id
+
+        if not is_staff(interaction):
+
+            return await interaction.response.send_message(
+
+                "❌ Você não tem permissão "
+                "para configurar o auto-close.",
+
+                ephemeral=True
+            )
+
+        channel = interaction.channel
+        guild = interaction.guild
+
+        owner_id = get_ticket_owner_id(channel)
+
+        owner = guild.get_member(owner_id) if owner_id else None
+
+        if not owner:
+
+            return await interaction.response.send_message(
+
+                "❌ Não foi possível identificar "
+                "o autor deste ticket.",
+
+                ephemeral=True
+            )
+
+        timeout_seconds = int(self.values[0])
+
+        auto_close_manager = interaction.client.auto_close_manager
+
+        await auto_close_manager.start_timer(
+
+            channel=channel,
+            user=owner,
+            timeout_seconds=timeout_seconds
+        )
+
+        hours = timeout_seconds / 3600
+
+        label = (
+
+            f"{int(timeout_seconds / 60)} minutos"
+
+            if timeout_seconds < 3600 else
+
+            f"{hours:g} horas"
+        )
+
+        await channel.send(
+
+            f"⏰ Fechamento automático configurado "
+            f"por {interaction.user.mention}: "
+            f"o ticket será fechado após **{label}** "
+            f"de inatividade do usuário."
+        )
+
+        await interaction.response.send_message(
+
+            f"✅ Auto-close configurado para {label}.",
+
+            ephemeral=True
+        )
+
+# =========================
+# ⏰ AUTO CLOSE VIEW
+# =========================
+
+class TicketAutoCloseView(View):
+
+    def __init__(self):
+
+        super().__init__(timeout=None)
+
+        self.add_item(
+            TicketAutoCloseSelect()
+        )
+
+# =========================
+# 📁 CHANGE CATEGORY SELECT
+# V1.3.2.12
+# =========================
+
+class TicketChangeCategorySelect(Select):
+
+    def __init__(self):
+
+        options = [
+
+            discord.SelectOption(
+                label="Central de Denúncias",
+                emoji="🚨",
+                value="denuncias"
+            ),
+
+            discord.SelectOption(
+                label="Dúvidas e Reportes",
+                emoji="❓",
+                value="duvidas"
+            ),
+
+            discord.SelectOption(
+                label="Central Financeira",
+                emoji="💰",
+                value="financeiro"
+            ),
+
+            discord.SelectOption(
+                label="Central de Organizações",
+                emoji="🏢",
+                value="organizacoes"
+            ),
+
+            discord.SelectOption(
+                label="Central de Parceiros",
+                emoji="🤝",
+                value="parcerias"
+            )
+        ]
+
+        super().__init__(
+
+            placeholder="Selecione a nova categoria...",
+
+            min_values=1,
+            max_values=1,
+
+            options=options,
+
+            custom_id="ticket_change_category_select"
+        )
+
+    # =========================
+    # ⚡ CALLBACK
+    # =========================
+
+    async def callback(
+        self,
+        interaction: discord.Interaction
+    ):
+
+        from systems.views import is_staff
+
+        if not is_staff(interaction):
+
+            return await interaction.response.send_message(
+
+                "❌ Você não tem permissão "
+                "para alterar a categoria.",
+
+                ephemeral=True
+            )
+
+        from systems.ticket_manager import change_ticket_category
+
+        new_category = self.values[0]
+
+        success = await change_ticket_category(
+
+            channel=interaction.channel,
+
+            new_category=new_category
+        )
+
+        if not success:
+
+            return await interaction.response.send_message(
+
+                "❌ Não foi possível alterar "
+                "a categoria deste ticket.",
+
+                ephemeral=True
+            )
+
+        await interaction.channel.send(
+
+            f"📁 Categoria alterada para "
+            f"`{new_category}` por "
+            f"{interaction.user.mention}."
+        )
+
+        await interaction.response.send_message(
+
+            f"✅ Categoria alterada para `{new_category}`.",
+
+            ephemeral=True
+        )
+
+# =========================
+# 📁 CHANGE CATEGORY VIEW
+# =========================
+
+class TicketChangeCategoryView(View):
+
+    def __init__(self):
+
+        super().__init__(timeout=None)
+
+        self.add_item(
+            TicketChangeCategorySelect()
+        )
