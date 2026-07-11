@@ -1,9 +1,30 @@
 # =========================
 # 🔐 PERMISSIONS ENGINE
-# V1.3.2 - TICKET SYSTEM
+# V1.3.2.13 - TICKET SYSTEM
 # =========================
 
 from typing import Dict, List, Optional
+
+
+# =========================
+# 🧪 ALIASES DE CARGO (SERVIDOR DE TESTE)
+# =========================
+# Mapeia o nome do cargo do servidor atual
+# para o nome oficial usado em ROLE_LEVELS.
+#
+# 🔁 QUANDO FOR PARA PRODUÇÃO: troque apenas
+# este dicionário (ou esvazie ele, se os
+# cargos reais já baterem com os nomes oficiais).
+# =========================
+
+ROLE_ALIASES: Dict[str, str] = {
+
+    "ceo_cnx": "ceo",
+
+    "diretor": "diretor_geral",
+
+    "moderador": "desenvolvedor_dc"
+}
 
 
 # =========================
@@ -181,12 +202,34 @@ DEV_TEAM = [
 # 🔐 CORE FUNCTIONS
 # =========================
 
+def resolve_role(role_name: str) -> str:
+
+    key = role_name.lower()
+
+    return ROLE_ALIASES.get(key, key)
+
+
+def resolve_roles(user_roles: List[str]) -> List[str]:
+
+    return [
+        resolve_role(r)
+        for r in user_roles
+    ]
+
+
 def get_role_level(role_name: str) -> int:
-    return ROLE_LEVELS.get(role_name.lower(), -1)
+
+    resolved = resolve_role(role_name)
+
+    return ROLE_LEVELS.get(resolved, -1)
 
 
 def get_user_highest_level(roles: List[str]) -> int:
-    return max([get_role_level(r) for r in roles], default=-1)
+
+    return max(
+        [get_role_level(r) for r in roles],
+        default=-1
+    )
 
 
 def can_access_ticket(user_roles: List[str], ticket_key: str) -> bool:
@@ -196,10 +239,12 @@ def can_access_ticket(user_roles: List[str], ticket_key: str) -> bool:
     if not rule:
         return False
 
+    resolved = resolve_roles(user_roles)
+
     user_level = get_user_highest_level(user_roles)
 
     # 🧠 DEV OVERRIDE
-    if "desenvolvedor_dc" in [r.lower() for r in user_roles]:
+    if "desenvolvedor_dc" in resolved:
         return True
 
     return user_level >= rule["min_level"]
@@ -212,13 +257,38 @@ def can_close_ticket(user_roles: List[str], ticket_key: str) -> bool:
     if not rule:
         return False
 
+    resolved = resolve_roles(user_roles)
+
     user_level = get_user_highest_level(user_roles)
 
-    # 🔥 ADMIN LÍDER EXCEPTION (pode sempre fechar dentro do escopo permitido)
-    if "admin_lider" in [r.lower() for r in user_roles]:
+    # 🔥 ADMIN LÍDER EXCEPTION
+    if "admin_lider" in resolved:
         return True
 
-    if "desenvolvedor_dc" in [r.lower() for r in user_roles]:
+    if "desenvolvedor_dc" in resolved:
         return True
 
     return user_level >= rule["min_level"]
+
+
+# =========================
+# 🎫 STAFF CHECK (GERENCIAMENTO GERAL)
+# =========================
+# Usado pelos botões do painel de ticket
+# (Fechar, Atender, Configurações) — não
+# depende de categoria específica, apenas
+# se a pessoa tem QUALQUER cargo reconhecido
+# como staff (nível >= 0).
+# =========================
+
+def is_ticket_staff(user_roles: List[str]) -> bool:
+
+    resolved = resolve_roles(user_roles)
+
+    # 🧠 DEV OVERRIDE
+    if "desenvolvedor_dc" in resolved:
+        return True
+
+    user_level = get_user_highest_level(user_roles)
+
+    return user_level >= 0

@@ -6,7 +6,7 @@ from discord.ui import (
     Button
 )
 
-from systems.permissions import can_close_ticket
+from systems.permissions import is_ticket_staff
 
 # =========================
 # 🔐 STAFF CHECK HELPER
@@ -21,11 +21,11 @@ def is_staff(interaction: discord.Interaction) -> bool:
         for r in interaction.user.roles
     ]
 
-    return can_close_ticket(roles, "generic")
+    return is_ticket_staff(roles)
 
 # =========================
 # 🎫 TICKET CATEGORY SELECT
-# V1.3.2.12
+# V1.3.2.13
 # =========================
 
 class TicketCategorySelect(Select):
